@@ -25,8 +25,10 @@ const { fixAgent } = require('./agents/fixAgent');
 const { githubAgent } = require('./agents/githubAgent');
 const { deployAgent } = require('./agents/deployAgent');
 const { runAgent } = require('./agents/runAgent');
+const { apiTesterAgent } = require('./agents/apiTesterAgent');
 const { deployApp } = require('./agents/hostingRouter');
 const emitter = require('./lib/logsEmitter');
+const { templatesForPrompt } = require('./lib/requirementTemplates');
 
 // Logging configuration
 const transport = winstonLib ? new winstonLib.transports.DailyRotateFile({
@@ -202,6 +204,239 @@ async function generateCode(prompt) {
       if (!ui.valid) issues.push({ description: `UI contract violated: ${ui.violations.join('; ')}`, severity: 'high', fix: 'Generate React JSX frontend files' });
       return { valid, issues };
     }
+    function extractIntentRequirements(prompt, stack) {
+      const p = (prompt || '').toLowerCase();
+      const req = { endpoints: [], requireJwt: false, requireHashing: false };
+      if (/\bauth\b|\blogin\b|\bregister\b|\bsignup\b|\bpassword\b/.test(p)) {
+        req.endpoints = ['/register', '/login', '/refresh', '/reset'];
+        req.requireJwt = true;
+        req.requireHashing = true;
+      }
+      return req;
+    }
+    function validateIntent(files, req) {
+      if (!req || (!req.endpoints || req.endpoints.length === 0) && !req.requireJwt && !req.requireHashing) {
+        return { valid: true, issues: [] };
+      }
+      const pyFiles = files.filter(f => f.path.toLowerCase().endsWith('.py'));
+      const foundEndpoints = new Set();
+      let jwtOk = false;
+      let hashOk = false;
+      const hasEndpoint = (content, ep) => {
+        const r = new RegExp(`@(?:app|router)\\.(?:get|post|put|delete|patch)\\(\\s*['"][^'"]*${ep}[^'"]*['"]\\s*\\)`);
+        return r.test(content);
+      };
+      for (const f of pyFiles) {
+        const c = f.content || '';
+        if (/\bjwt\b/i.test(c) || /\bjose\b/i.test(c)) jwtOk = true;
+        if (/\bpasslib\b/i.test(c) || /\bbcrypt\b/i.test(c)) hashOk = true;
+        for (const ep of req.endpoints || []) {
+          if (hasEndpoint(c, ep)) foundEndpoints.add(ep);
+        }
+      }
+      const missing = (req.endpoints || []).filter(ep => !foundEndpoints.has(ep));
+      const issues = [];
+      if (missing.length) {
+        issues.push({ description: `Missing required endpoints: ${missing.join(', ')}`, severity: 'high', fix: `Add FastAPI routes for ${missing.join(', ')}` });
+      }
+      if (req.requireJwt && !jwtOk) {
+        issues.push({ description: 'JWT support not detected in backend', severity: 'high', fix: 'Add JWT auth using jose or pyjwt and integrate with login route' });
+      }
+      if (req.requireHashing && !hashOk) {
+        issues.push({ description: 'Password hashing not detected in backend', severity: 'high', fix: 'Use passlib CryptContext or bcrypt to hash and verify passwords' });
+      }
+      return { valid: issues.length === 0, issues };
+    }
+    function validateSharedContract(files) {
+      const pyFiles = files.filter(f => f.path.toLowerCase().endsWith('.py'));
+      const jsxFiles = files.filter(f => f.path.toLowerCase().endsWith('.jsx'));
+      const backendEndpoints = new Set();
+      const frontendCalls = new Set();
+
+      // Extract backend endpoints
+      const endpointRegex = /@(?:app|router)\.(?:get|post|put|delete|patch)\(\s*['"]([^'"]+)['"]/g;
+      for (const f of pyFiles) {
+        let match;
+        while ((match = endpointRegex.exec(f.content)) !== null) {
+          backendEndpoints.add(match[1]);
+        }
+      }
+
+      // Extract frontend API calls (simple regex for fetch/axios)
+      const apiCallRegex = /(?:fetch|axios\.(?:get|post|put|delete|patch))\(\s*['"]([^'"]+)['"]/g;
+      for (const f of jsxFiles) {
+        let match;
+        while ((match = apiCallRegex.exec(f.content)) !== null) {
+          const url = match[1];
+          // Basic heuristic: if it starts with / or http, it's an API call
+          if (url.startsWith('/') || url.startsWith('http')) {
+            // Normalize: remove host if present, keep path
+            const pathMatch = url.match(/https?:\/\/[^\/]+(\/.*)/);
+            frontendCalls.add(pathMatch ? pathMatch[1] : url);
+          }
+        }
+      }
+
+      const issues = [];
+      for (const call of frontendCalls) {
+        // Simple matching: check if the call path exists in backend endpoints
+        // We might need better matching (e.g. handle path parameters /user/:id vs /user/{id})
+        let matched = false;
+        for (const endpoint of backendEndpoints) {
+          const normalizedEndpoint = endpoint.replace(/\{[^\}]+\}/g, ':param');
+          const normalizedCall = call.replace(/\/api\//, '/').split('?')[0]; // simple normalization
+          if (normalizedCall === endpoint || normalizedCall === normalizedEndpoint) {
+            matched = true;
+            break;
+          }
+        }
+        if (!matched && backendEndpoints.size > 0) {
+          issues.push({
+            description: `Frontend calls unknown endpoint: ${call}`,
+            severity: 'high',
+            fix: `Align frontend API call "${call}" with one of the backend endpoints: ${Array.from(backendEndpoints).join(', ')}`
+          });
+        }
+      }
+
+      return { valid: issues.length === 0, issues };
+    }
+    function normalizeRequirements(reqs, prompt, memory) {
+      function pri(v) {
+        const m = String(v).toLowerCase();
+        if (m.includes('login') || m.includes('register') || m.includes('jwt') || m.includes('password-hashing')) return 'critical';
+        if (m.includes('transactions') || m.includes('accounts') || m.includes('database') || m.includes('websocket')) return 'high';
+        return 'medium';
+      }
+      const set = new Map();
+      const templates = templatesForPrompt(prompt);
+      const order = { low: 0, medium: 1, high: 2, critical: 3 };
+      const put = (t, v, p, source, extra) => {
+        const key = `${t}:${v}`;
+        const existing = set.get(key);
+        const conf = source === 'template' ? 0.92 : source === 'planner' ? 0.8 : 0.7;
+        const item = { type: t, value: v, priority: p, confidence: conf, ...(extra || {}) };
+        if (!existing) set.set(key, item);
+        else if (order[p] > order[existing.priority || 'medium']) set.set(key, { ...item, confidence: Math.max(conf, existing.confidence || 0.7) });
+      };
+      templates.forEach(r => put(r.type, r.value, r.priority, 'template'));
+      (reqs || []).forEach(r => {
+        if (!r) return;
+        if (typeof r === 'string') {
+          const s = r.toLowerCase();
+          const endpoints = Array.from(new Set((s.match(/\/[a-z0-9/_-]+/gi) || [])));
+          endpoints.forEach(ep => put('endpoint', ep, pri(ep), 'inferred'));
+          if (/\bauth|authentication|jwt\b/.test(s)) {
+            put('capability', 'jwt', 'critical', 'inferred');
+          }
+          if (/\bhash|password[-\s]?hash|bcrypt|passlib\b/.test(s)) {
+            put('capability', 'password-hashing', 'critical', 'inferred');
+          }
+          if (/\bdatabase|schema|model\b/.test(s)) {
+            put('capability', 'database', 'high', 'inferred');
+          }
+          if (/\btransaction\b/.test(s)) {
+            put('endpoint', '/transactions', 'high', 'inferred');
+          }
+          if (/\bchat\b/.test(s)) {
+            put('endpoint', '/messages', 'high', 'inferred');
+            put('capability', 'websocket', 'high', 'inferred');
+          }
+        } else if (typeof r === 'object' && r.type && r.value) {
+          const t = String(r.type).toLowerCase();
+          const v = String(r.value);
+          const pr = r.priority ? String(r.priority).toLowerCase() : pri(v);
+          const item = { 
+            type: t, 
+            value: v, 
+            priority: pr,
+            method: r.method,
+            requestBody: r.requestBody,
+            response: r.response
+          };
+          put(t, v, pr, 'planner', item);
+        }
+      });
+      const mem = memory || {};
+      const recent = Array.isArray(mem.lastIssues) ? mem.lastIssues : [];
+      const failureCounts = new Map();
+      recent.forEach(entry => {
+        const arr = entry.issues || [];
+        arr.forEach(i => {
+          const d = String(i.description || '').toLowerCase();
+          const t = d.includes('endpoint') ? 'endpoint' : d.includes('capability') ? 'capability' : d.includes('schema') ? 'schema' : 'other';
+          let v = '';
+          if (t === 'endpoint') {
+            const m = d.match(/([\/a-z0-9_-]+)/i);
+            if (m) v = m[1];
+          } else if (t === 'capability') {
+            if (d.includes('jwt')) v = 'jwt';
+            else if (d.includes('hash')) v = 'password-hashing';
+            else if (d.includes('database')) v = 'database';
+            else if (d.includes('websocket')) v = 'websocket';
+          }
+          if (v) {
+            const key = `${t}:${v}`;
+            const count = (failureCounts.get(key) || 0) + 1;
+            failureCounts.set(key, count);
+          }
+        });
+      });
+      failureCounts.forEach((count, key) => {
+        const [t, v] = key.split(':');
+        const ex = set.get(key);
+        if (ex) {
+          const newPriority = count >= 2 ? 'critical' : count >= 1 ? 'high' : ex.priority;
+          set.set(key, { ...ex, priority: newPriority, confidence: 0.98 });
+        } else if (count >= 2) {
+          // If it failed twice but isn't in current requirements, add it as critical
+          put(t, v, 'critical', 'memory');
+        }
+      });
+      return Array.from(set.values());
+    }
+    function validateRequirements(files, reqs) {
+      const pyFiles = files.filter(f => f.path.toLowerCase().endsWith('.py'));
+      const issues = [];
+      const hasEndpoint = (content, ep) => {
+        const r = new RegExp(`@(?:app|router)\\.(?:get|post|put|delete|patch)\\(\\s*['"][^'"]*${ep}[^'"]*['"]\\s*\\)`);
+        return r.test(content);
+      };
+      const contentAll = pyFiles.map(f => f.content || '').join('\n');
+      const hasJwt = /\bjwt\b/i.test(contentAll) || /\bjose\b/i.test(contentAll);
+      const hasHash = /\bpasslib\b/i.test(contentAll) || /\bbcrypt\b/i.test(contentAll);
+      const hasDb = /\bsqlalchemy\b/i.test(contentAll) || /\bpsycopg2\b/i.test(contentAll) || /\basyncpg\b/i.test(contentAll);
+      const hasWs = /\bWebSocket\b/.test(contentAll) || /\bwebsocket\b/i.test(contentAll);
+      for (const r of reqs || []) {
+        if (r.type === 'endpoint') {
+          let ok = false;
+          for (const f of pyFiles) {
+            if (hasEndpoint(f.content || '', r.value)) { ok = true; break; }
+          }
+          if (!ok) {
+            const sev = r.priority === 'critical' ? 'critical' : r.priority === 'high' ? 'high' : r.priority || 'medium';
+            issues.push({ description: `Missing endpoint: ${r.value}`, severity: sev, fix: `Add FastAPI route for ${r.value}` });
+          }
+        } else if (r.type === 'capability') {
+          const v = String(r.value).toLowerCase();
+          const sev = r.priority === 'critical' ? 'critical' : r.priority === 'high' ? 'high' : r.priority || 'medium';
+          if (v.includes('jwt') && !hasJwt) issues.push({ description: 'JWT capability missing', severity: sev, fix: 'Integrate JWT (pyjwt or jose) in auth flow' });
+          if ((v.includes('hash') || v.includes('password-hashing')) && !hasHash) issues.push({ description: 'Password hashing capability missing', severity: sev, fix: 'Use passlib CryptContext or bcrypt for hashing and verification' });
+          if (v.includes('database') && !hasDb) issues.push({ description: 'Database integration missing', severity: sev === 'critical' ? 'high' : sev, fix: 'Add SQLAlchemy models and PostgreSQL connection' });
+          if (v.includes('websocket') && !hasWs) issues.push({ description: 'WebSocket capability missing', severity: sev, fix: 'Add FastAPI WebSocket endpoint' });
+        } else if (r.type === 'schema') {
+          const v = String(r.value).toLowerCase();
+          const entityRegex = new RegExp(`class\\s+${v.replace(/[^a-z0-9]/gi, '')}\\b`, 'i');
+          const modelOk = pyFiles.some(f => entityRegex.test(f.content || '')) || /\bBase\b/.test(contentAll);
+          if (!modelOk) {
+            const sev = r.priority === 'critical' ? 'high' : r.priority || 'medium';
+            issues.push({ description: `Schema not found for: ${r.value}`, severity: sev, fix: `Define SQLAlchemy models for ${r.value}` });
+          }
+        }
+      }
+      const blocking = issues.some(i => i.severity === 'critical' || i.severity === 'high');
+      return { valid: !blocking, issues };
+    }
     function extractDependencies(files) {
       const deps = new Set();
       for (const f of files) {
@@ -236,6 +471,7 @@ async function generateCode(prompt) {
     memoryStore.recordPrompt(prompt);
     logger.info(`Plan created with ${plan.tasks.length} tasks.`);
     emitter.emit('log', `Plan tasks: ${plan.tasks.length}`);
+    sharedContext.requirements = normalizeRequirements(plan.requirements || [], prompt, sharedContext.memory);
 
     // Step 2: Execute tasks in order
     for (const task of plan.tasks) {
@@ -295,6 +531,7 @@ async function generateCode(prompt) {
         if (contractCheck.valid) break;
         logger.warn('Contract validation failed, attempting auto-repair.');
         const qaResult = { hasIssues: true, issues: contractCheck.issues };
+        memoryStore.recordIssues(contractCheck.issues);
         const fixed = await fixAgent(finalFiles, qaResult, sharedContext);
         finalFiles = filterFilesStrict(filterByStack(dedupFiles(fixed), sharedContext.stack), sharedContext.stack);
         attempts -= 1;
@@ -303,6 +540,69 @@ async function generateCode(prompt) {
       if (!finalContract.valid) {
         logger.error('Contract violations persist — rejecting files.');
         throw new Error('Invalid backend/frontend implementation');
+      }
+    }
+    {
+      if (sharedContext.requirements && sharedContext.requirements.length) {
+        let attempts = 2;
+        while (attempts > 0) {
+          const reqCheck = validateRequirements(finalFiles, sharedContext.requirements);
+          if (reqCheck.valid) break;
+          logger.warn('Requirements validation failed, attempting auto-repair.');
+          emitter.emit('log', `Requirement issues: ${reqCheck.issues.map(i => i.description).join(' | ')}`);
+          const qaResult = { hasIssues: true, issues: reqCheck.issues };
+          memoryStore.recordIssues(reqCheck.issues);
+          const fixed = await fixAgent(finalFiles, qaResult, sharedContext);
+          finalFiles = filterFilesStrict(filterByStack(dedupFiles(fixed), sharedContext.stack), sharedContext.stack);
+          attempts -= 1;
+        }
+        const finalReqCheck = validateRequirements(finalFiles, sharedContext.requirements);
+        if (!finalReqCheck.valid) {
+          logger.error('Requirement violations persist — rejecting files.');
+          throw new Error('Dynamic requirements not satisfied');
+        }
+      }
+    }
+    {
+      const intentReq = extractIntentRequirements(prompt, sharedContext.stack);
+      if (intentReq && (intentReq.endpoints && intentReq.endpoints.length || intentReq.requireJwt || intentReq.requireHashing)) {
+        let attempts = 2;
+        while (attempts > 0) {
+          const intentCheck = validateIntent(finalFiles, intentReq);
+          if (intentCheck.valid) break;
+          logger.warn('Intent validation failed, attempting auto-repair.');
+          emitter.emit('log', `Intent issues: ${intentCheck.issues.map(i => i.description).join(' | ')}`);
+          const qaResult = { hasIssues: true, issues: intentCheck.issues };
+          memoryStore.recordIssues(intentCheck.issues);
+          const fixed = await fixAgent(finalFiles, qaResult, sharedContext);
+          finalFiles = filterFilesStrict(filterByStack(dedupFiles(fixed), sharedContext.stack), sharedContext.stack);
+          attempts -= 1;
+        }
+        const finalIntent = validateIntent(finalFiles, intentReq);
+        if (!finalIntent.valid) {
+          logger.error('Intent violations persist — rejecting files.');
+          throw new Error('Intent requirements not satisfied');
+        }
+      }
+    }
+    {
+      // NEW: Shared contract validation (Backend vs Frontend alignment)
+      let attempts = 2;
+      while (attempts > 0) {
+        const sharedCheck = validateSharedContract(finalFiles);
+        if (sharedCheck.valid) break;
+        logger.warn('Shared contract validation failed, attempting auto-repair.');
+        emitter.emit('log', `Shared contract issues: ${sharedCheck.issues.map(i => i.description).join(' | ')}`);
+        const qaResult = { hasIssues: true, issues: sharedCheck.issues };
+        memoryStore.recordIssues(sharedCheck.issues);
+        const fixed = await fixAgent(finalFiles, qaResult, sharedContext);
+        finalFiles = filterFilesStrict(filterByStack(dedupFiles(fixed), sharedContext.stack), sharedContext.stack);
+        attempts -= 1;
+      }
+      const finalShared = validateSharedContract(finalFiles);
+      if (!finalShared.valid) {
+        logger.error('Shared contract violations persist — rejecting files.');
+        throw new Error('Shared contract between backend and UI is broken');
       }
     }
     for (const file of finalFiles) {
@@ -335,25 +635,53 @@ async function generateCode(prompt) {
     for (let attempt = 1; attempt <= MAX_FIX_ATTEMPTS; attempt++) {
       const runResult = await runAgent(outputBase);
       if (runResult.success) {
-        console.log(`✅ Code runs successfully!`);
-        logger.info('Run-and-Correct: code executed successfully.');
-        emitter.emit('log', `Run success`);
-        runSuccess = true;
-        break;
+        console.log(`✅ Code starts successfully!`);
+        
+        // NEW: Runtime API Testing
+        console.log(`🧪 Starting Runtime API Validation...`);
+        logger.info('Starting API Tester Agent...');
+        const apiTestResult = await apiTesterAgent(outputBase, sharedContext);
+        
+        if (apiTestResult.success) {
+          console.log(`✅ API Validation passed! All endpoints responded correctly.`);
+          logger.info('Run-and-Correct: code executed and API validated successfully.');
+          emitter.emit('log', `Run and API success`);
+          runSuccess = true;
+          break;
+        } else {
+          console.log(`⚠️  API Validation failed. ${apiTestResult.issues ? apiTestResult.issues.length : 0} runtime issues detected.`);
+          logger.warn(`API Testing failed: ${apiTestResult.error || 'issues detected'}`);
+          emitter.emit('log', `API Testing failed: ${apiTestResult.error || 'issues detected'}`);
+          
+          const apiQaResult = {
+            hasIssues: true,
+            issues: apiTestResult.issues || [{
+              description: `API Runtime Error: ${apiTestResult.error}`,
+              severity: 'high',
+              fix: 'Fix the backend implementation to ensure endpoints respond correctly.'
+            }]
+          };
+          
+          memoryStore.recordIssues(apiQaResult.issues);
+          allFiles = await fixAgent(finalFiles, apiQaResult, sharedContext);
+        }
+      } else {
+        console.log(`⚠️  Attempt ${attempt}/${MAX_FIX_ATTEMPTS} failed to start. Auto-fixing...`);
+        logger.warn(`Run failed (attempt ${attempt}): ${runResult.error}`);
+        emitter.emit('log', `Run failed: ${runResult.error}`);
+        const runtimeQaResult = {
+          hasIssues: true,
+          issues: [{
+            description: `Runtime error when executing the app: ${runResult.error}`,
+            severity: 'high',
+            fix: 'Fix the code so it runs without errors'
+          }]
+        };
+        memoryStore.recordIssues(runtimeQaResult.issues);
+        allFiles = await fixAgent(finalFiles, runtimeQaResult, sharedContext);
       }
-      console.log(`⚠️  Attempt ${attempt}/${MAX_FIX_ATTEMPTS} failed. Auto-fixing...`);
-      logger.warn(`Run failed (attempt ${attempt}): ${runResult.error}`);
-      emitter.emit('log', `Run failed: ${runResult.error}`);
-      const runtimeQaResult = {
-        hasIssues: true,
-        issues: [{
-          description: `Runtime error when executing the app: ${runResult.error}`,
-          severity: 'high',
-          fix: 'Fix the code so it runs without errors'
-        }]
-      };
-      allFiles = await fixAgent(finalFiles, runtimeQaResult, sharedContext);
-      finalFiles = filterByStack(dedupFiles(allFiles), sharedContext.stack);
+      
+      finalFiles = filterFilesStrict(filterByStack(dedupFiles(allFiles), sharedContext.stack), sharedContext.stack);
       for (const file of finalFiles) {
         const filePath = resolveFullPath(file.path);
         await fsp.mkdir(path.dirname(filePath), { recursive: true });
