@@ -10,70 +10,69 @@ const pool = new Pool({
   password: 'password',
   port: 5432,
 });
+
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { username, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await pool.query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *', [name, email, hashedPassword]);
+    const result = await pool.query('INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *', [username, email, hashedPassword]);
     const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id }, 'secretkey', {
-      expiresIn: '1h'
-    });
+    const token = jwt.sign({ userId: user.id }, 'secretkey', { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error registering user' });
   }
 });
+
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const { username, password } = req.body;
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = result.rows[0];
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid username or password' });
     }
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid username or password' });
     }
-    const token = jwt.sign({ userId: user.id }, 'secretkey', {
-      expiresIn: '1h'
-    });
+    const token = jwt.sign({ userId: user.id }, 'secretkey', { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error logging in user' });
   }
 });
-router.post('/recover', async (req, res) => {
+
+router.post('/refresh', async (req, res) => {
   try {
-    const { email } = req.body;
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    const user = result.rows[0];
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const token = req.body.token;
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
     }
-    const token = jwt.sign({ userId: user.id }, 'secretkey', {
-      expiresIn: '1h'
+    jwt.verify(token, 'secretkey', (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+      const newToken = jwt.sign({ userId: decoded.userId }, 'secretkey', { expiresIn: '1h' });
+      res.json({ token: newToken });
     });
-    // Send recovery email with token
-    res.json({ message: 'Recovery email sent' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Error recovering password' });
+    res.status(500).json({ message: 'Error refreshing token' });
   }
 });
+
 router.post('/reset', async (req, res) => {
   try {
-    const { token, password } = req.body;
-    const decoded = jwt.verify(token, 'secretkey');
-    const result = await pool.query('SELECT * FROM users WHERE id = $1', [decoded.userId]);
+    const { username, newPassword } = req.body;
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = result.rows[0];
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'Invalid username' });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
     res.json({ message: 'Password reset successfully' });
   } catch (err) {
@@ -81,4 +80,5 @@ router.post('/reset', async (req, res) => {
     res.status(500).json({ message: 'Error resetting password' });
   }
 });
+
 module.exports = router;

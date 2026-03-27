@@ -16,6 +16,8 @@ async function runAgent(projectDir, maxRetries = 3) {
     path.join(projectDir, 'src', 'app.js'),
     path.join(projectDir, 'src', 'index.js'),
     path.join(projectDir, 'app.js'),
+    path.join(projectDir, 'backend', 'app', 'main.py'),
+    path.join(projectDir, 'main.py'),
   ];
 
   const entryPoint = candidates.find(f => fs.existsSync(f));
@@ -29,7 +31,10 @@ async function runAgent(projectDir, maxRetries = 3) {
 
   console.log(`🏃 Running: ${path.relative(projectDir, entryPoint)}`);
 
-  const result = spawnSync('node', [entryPoint], {
+  const isPython = entryPoint.endsWith('.py');
+  const cmd = isPython ? (process.env.PYTHON || 'python') : 'node';
+  const args = [entryPoint];
+  const result = spawnSync(cmd, args, {
     cwd: projectDir,
     timeout: 5000,
     encoding: 'utf8',

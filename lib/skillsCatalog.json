@@ -1,0 +1,72 @@
+{
+  "skills": [
+    {
+      "name": "@jwt-auth",
+      "tags": ["auth", "login", "jwt", "token"],
+      "guidelines": [
+        "Implement JWT issuance and verification",
+        "Use refresh tokens endpoint /refresh",
+        "Store only hashed passwords; never plaintext"
+      ]
+    },
+    {
+      "name": "@secure-password",
+      "tags": ["auth", "password", "hash", "bcrypt"],
+      "guidelines": [
+        "Use bcrypt hashing or passlib (Python) with strong cost",
+        "Add password reset flow with time-bound tokens",
+        "Enforce minimum password strength"
+      ]
+    },
+    {
+      "name": "@rate-limiting",
+      "tags": ["rate", "limit", "security"],
+      "guidelines": [
+        "Add per-IP rate limits to auth endpoints",
+        "Return 429 on abuse and log events"
+      ]
+    },
+    {
+      "name": "@fastapi-best-practices",
+      "tags": ["fastapi", "python", "backend"],
+      "guidelines": [
+        "Structure code: backend/app/main.py, backend/app/routes/*.py, backend/app/models/*.py",
+        "Use Pydantic models for request/response validation",
+        "Enable CORS appropriately for frontend"
+      ]
+    },
+    {
+      "name": "@postgres-best-practices",
+      "tags": ["postgres", "database", "sql"],
+      "guidelines": [
+        "Use SQLAlchemy or async equivalent with connection pooling",
+        "Store DSN in environment, do not hardcode secrets",
+        "Add migrations folder and migration script"
+      ]
+    },
+    {
+      "name": "@migrations",
+      "tags": ["migration", "schema"],
+      "guidelines": [
+        "Create migrations directory with versioned scripts",
+        "Add initial schema migration for users/auth tables"
+      ]
+    },
+    {
+      "name": "@react-forms",
+      "tags": ["react", "form", "frontend", "ui"],
+      "guidelines": [
+        "Use controlled inputs and handle async submit",
+        "Show validation and error states clearly"
+      ]
+    },
+    {
+      "name": "@tailwind-setup",
+      "tags": ["tailwind", "css", "frontend"],
+      "guidelines": [
+        "Configure Tailwind and use utility classes for layout",
+        "Ensure responsive design for auth and dashboard pages"
+      ]
+    }
+  ]
+}

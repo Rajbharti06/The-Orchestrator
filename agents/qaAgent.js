@@ -43,12 +43,14 @@ async function qaAgent(allFiles, sharedContext) {
         { role: "system", content: systemMessage },
         { role: "user", content: `Review these files:\n\n${fileSummary}\n\nShared Context: ${JSON.stringify(sharedContext)}` }
       ],
-      model: process.env.MODEL_NAME
+      model: process.env.MODEL_NAME,
+      taskType: 'qa',
+      preferredProvider: (sharedContext.providers && sharedContext.providers.qa) || undefined
     });
     return JSON.parse(content);
   } catch (error) {
     console.error("Error in QA agent:", error.message);
-    return { hasIssues: false, issues: [], suggestions: "QA failed to run but system continues." };
+    throw new Error("QA failed - stopping pipeline");
   }
 }
 

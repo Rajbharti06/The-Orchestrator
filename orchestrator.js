@@ -72,8 +72,18 @@ async function generateCode(prompt) {
   }
 
   try {
-    const sharedContext = {};
+    const sharedContext = {
+      stack: {
+        backend: "FastAPI (Python)",
+        frontend: "React (JS + Tailwind)",
+        database: "PostgreSQL"
+      }
+    };
     let allFiles = [];
+    const outputBase = (process.env.OUTPUT_DIR && process.env.OUTPUT_DIR.trim()) ? process.env.OUTPUT_DIR.trim() : process.cwd();
+    function resolveFullPath(relOrAbs) {
+      return path.isAbsolute(relOrAbs) ? relOrAbs : path.join(outputBase, relOrAbs);
+    }
     async function retry(fn, retries = 3, delayMs = 1000) {
       try { return await fn(); } catch (e) {
         if (retries <= 1) throw e;
@@ -93,6 +103,104 @@ async function generateCode(prompt) {
         }
       }
       return Array.from(map.values());
+    }
+    function filterByStack(files, stack) {
+      const out = [];
+      for (const f of files) {
+        const p = f.path.toLowerCase();
+        // Drop Vue files always
+        if (p.endsWith('.vue')) continue;
+        // Backend enforcement: keep .py for backend when FastAPI
+        if (stack.backend.includes('FastAPI')) {
+          // Remove common Node backend files
+          if (p === 'src/app.js' || p.startsWith('src/routes/') && p.endsWith('.js') || p === 'server.js') continue;
+        }
+        // Frontend enforcement: prefer .jsx over .js duplicates
+        if (stack.frontend.includes('React')) {
+          // If both index.jsx and index.js exist, we will keep .jsx via dedup later
+        }
+        out.push(f);
+      }
+      return out;
+    }
+    function filterFilesStrict(files, stack) {
+      const allowedExt = new Set(['.py', '.jsx', '.css', '.html', '.json']);
+      const filtered = [];
+      for (const f of files) {
+        const ext = (f.path.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
+        if (!allowedExt.has(ext)) continue;
+        // Enforce backend location for Python
+        if (ext === '.py' && !f.path.toLowerCase().startsWith('backend/')) continue;
+        // Enforce frontend location for React/CSS/HTML
+        if ((ext === '.jsx' || ext === '.css' || ext === '.html') && !f.path.toLowerCase().startsWith('frontend/')) continue;
+        filtered.push(f);
+      }
+      return filtered;
+    }
+    function isValidStack(files, stack) {
+      // No disallowed extensions remain
+      const disallowed = files.filter(f => {
+        const ext = (f.path.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
+        return ['.vue', '.ts', '.mjs'].includes(ext);
+      });
+      if (disallowed.length) return false;
+      // Must include core backend entry for FastAPI
+      if (stack.backend.includes('FastAPI')) {
+        const hasMain = files.some(f => f.path.toLowerCase() === 'backend/app/main.py');
+        const hasAuth = files.some(f => f.path.toLowerCase().includes('backend/app/routes') && f.path.toLowerCase().endsWith('auth.py'));
+        if (!hasMain || !hasAuth) return false;
+      }
+      // If React frontend selected, ensure App.jsx exists
+      if (stack.frontend.includes('React')) {
+        const hasApp = files.some(f => f.path.toLowerCase() === 'frontend/src/app.jsx');
+        if (!hasApp) return false;
+      }
+      return true;
+    }
+    function validateBackendContract(files) {
+      const pyFiles = files.filter(f => f.path.toLowerCase().endsWith('.py'));
+      let fastapiOk = false;
+      let appOk = false;
+      let decoratorsOk = false;
+      let forbiddenHit = false;
+      for (const f of pyFiles) {
+        const c = f.content || '';
+        if (c.includes('from fastapi') || c.includes('FastAPI')) fastapiOk = true;
+        if (c.includes('app = FastAPI(')) appOk = true;
+        if (c.includes('@app.get') || c.includes('@app.post') || c.includes('APIRouter(')) decoratorsOk = true;
+        if (c.includes('require(') || c.toLowerCase().includes('express') || c.toLowerCase().includes('vue')) forbiddenHit = true;
+      }
+      const valid = fastapiOk && appOk && decoratorsOk && !forbiddenHit;
+      const violations = [];
+      if (!fastapiOk) violations.push('FastAPI import missing');
+      if (!appOk) violations.push('FastAPI app initialization missing');
+      if (!decoratorsOk) violations.push('No route decorators found');
+      if (forbiddenHit) violations.push('Forbidden framework references present');
+      return { valid, violations };
+    }
+    function validateUIContract(files) {
+      const jsxFiles = files.filter(f => f.path.toLowerCase().endsWith('.jsx'));
+      let reactOk = false;
+      let forbiddenHit = false;
+      for (const f of jsxFiles) {
+        const c = f.content || '';
+        if (c.includes("from 'react'") || c.includes('import React')) reactOk = true;
+        if (c.toLowerCase().includes('vue') || c.includes('<template>')) forbiddenHit = true;
+      }
+      const valid = reactOk && !forbiddenHit;
+      const violations = [];
+      if (!reactOk) violations.push('React import missing');
+      if (forbiddenHit) violations.push('Forbidden frontend framework references present');
+      return { valid, violations };
+    }
+    function validateContracts(files, stack) {
+      const back = validateBackendContract(files);
+      const ui = validateUIContract(files);
+      const valid = back.valid && ui.valid;
+      const issues = [];
+      if (!back.valid) issues.push({ description: `Backend contract violated: ${back.violations.join('; ')}`, severity: 'high', fix: 'Generate FastAPI-compliant backend files' });
+      if (!ui.valid) issues.push({ description: `UI contract violated: ${ui.violations.join('; ')}`, severity: 'high', fix: 'Generate React JSX frontend files' });
+      return { valid, issues };
     }
     function extractDependencies(files) {
       const deps = new Set();
@@ -114,7 +222,18 @@ async function generateCode(prompt) {
     // Step 1: Create an execution plan
     console.log('📝 Planning development tasks...');
     logger.info('Calling plannerAgent to break down prompt...');
-    const plan = await plannerAgent(prompt);
+    const memoryStore = require('./lib/memoryStore');
+    sharedContext.memory = memoryStore.summary();
+    // Persist preferences (stack) so future runs can reuse
+    memoryStore.setPreference('backend', sharedContext.stack.backend);
+    memoryStore.setPreference('frontend', sharedContext.stack.frontend);
+    memoryStore.setPreference('database', sharedContext.stack.database);
+    const { computeAll } = require('./lib/providerScoring');
+    sharedContext.providers = computeAll(sharedContext.memory);
+    logger.info(`Providers selected: ${JSON.stringify(sharedContext.providers)}`);
+    emitter.emit('log', `Providers: ${JSON.stringify(sharedContext.providers)}`);
+    const plan = await plannerAgent(prompt, sharedContext);
+    memoryStore.recordPrompt(prompt);
     logger.info(`Plan created with ${plan.tasks.length} tasks.`);
     emitter.emit('log', `Plan tasks: ${plan.tasks.length}`);
 
@@ -124,7 +243,9 @@ async function generateCode(prompt) {
         console.log(`⚙️  Building Backend: ${task.description.substring(0, 50)}...`);
         logger.info(`Executing backend task: "${task.description}"`);
         emitter.emit('log', `Backend task: ${task.description}`);
-        const backendResult = await backendAgent(task.description, sharedContext);
+        const { selectSkills } = require('./lib/skills');
+        const skills = selectSkills(task.description, sharedContext.stack);
+        const backendResult = await backendAgent(task.description, sharedContext, skills);
         if (backendResult && backendResult.files) {
           allFiles = allFiles.concat(backendResult.files);
         }
@@ -134,7 +255,9 @@ async function generateCode(prompt) {
         console.log(`🎨 Generating UI: ${task.description.substring(0, 50)}...`);
         logger.info(`Executing UI task: "${task.description}"`);
         emitter.emit('log', `UI task: ${task.description}`);
-        const uiResult = await uiAgent(task.description, sharedContext);
+        const { selectSkills } = require('./lib/skills');
+        const skills = selectSkills(task.description, sharedContext.stack);
+        const uiResult = await uiAgent(task.description, sharedContext, skills);
         if (uiResult && uiResult.files) {
           allFiles = allFiles.concat(uiResult.files);
         }
@@ -149,7 +272,9 @@ async function generateCode(prompt) {
       console.log(`🔧 Fixing ${qaResult.issues.length} issues found by QA...`);
       logger.warn(`QA found ${qaResult.issues.length} issues. Severity: ${qaResult.issues[0].severity}. Starting Fix Loop...`);
       emitter.emit('log', `QA issues: ${qaResult.issues.length}`);
-      allFiles = await fixAgent(allFiles, qaResult, sharedContext);
+      const fixed = await fixAgent(allFiles, qaResult, sharedContext);
+      allFiles = fixed;
+      memoryStore.recordIssues(qaResult.issues || []);
       logger.info('Fix Loop completed.');
     } else {
       console.log('✅ QA Audit passed.');
@@ -157,9 +282,31 @@ async function generateCode(prompt) {
       emitter.emit('log', `QA passed`);
     }
 
-    let finalFiles = dedupFiles(allFiles);
+    let finalFiles = filterByStack(dedupFiles(allFiles), sharedContext.stack);
+    finalFiles = filterFilesStrict(finalFiles, sharedContext.stack);
+    if (!isValidStack(finalFiles, sharedContext.stack)) {
+      logger.error('Invalid stack output detected after fix loop — rejecting files.');
+      throw new Error('Invalid stack output');
+    }
+    {
+      let attempts = 2;
+      while (attempts > 0) {
+        const contractCheck = validateContracts(finalFiles, sharedContext.stack);
+        if (contractCheck.valid) break;
+        logger.warn('Contract validation failed, attempting auto-repair.');
+        const qaResult = { hasIssues: true, issues: contractCheck.issues };
+        const fixed = await fixAgent(finalFiles, qaResult, sharedContext);
+        finalFiles = filterFilesStrict(filterByStack(dedupFiles(fixed), sharedContext.stack), sharedContext.stack);
+        attempts -= 1;
+      }
+      const finalContract = validateContracts(finalFiles, sharedContext.stack);
+      if (!finalContract.valid) {
+        logger.error('Contract violations persist — rejecting files.');
+        throw new Error('Invalid backend/frontend implementation');
+      }
+    }
     for (const file of finalFiles) {
-      const filePath = path.join(process.cwd(), file.path);
+      const filePath = resolveFullPath(file.path);
       await fsp.mkdir(path.dirname(filePath), { recursive: true });
       await fsp.writeFile(filePath, file.content);
       logger.info(`File written: ${file.path}`);
@@ -168,7 +315,7 @@ async function generateCode(prompt) {
     const { execSync } = require('child_process');
     const deps = extractDependencies(finalFiles);
     try {
-      const pkgPath = path.join(process.cwd(), 'package.json');
+      const pkgPath = path.join(outputBase, 'package.json');
       let installed = [];
       if (fs.existsSync(pkgPath)) {
         const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
@@ -177,7 +324,7 @@ async function generateCode(prompt) {
       const missing = deps.filter(d => !installed.includes(d));
       if (missing.length) {
         console.log(`📦 Installing missing deps: ${missing.join(' ')}`);
-        execSync(`npm install ${missing.join(' ')}`, { cwd: process.cwd(), stdio: 'ignore' });
+        execSync(`npm install ${missing.join(' ')}`, { cwd: outputBase, stdio: 'ignore' });
       }
     } catch (e) {}
 
@@ -186,7 +333,7 @@ async function generateCode(prompt) {
     const MAX_FIX_ATTEMPTS = 3;
     let runSuccess = false;
     for (let attempt = 1; attempt <= MAX_FIX_ATTEMPTS; attempt++) {
-      const runResult = await runAgent(process.cwd());
+      const runResult = await runAgent(outputBase);
       if (runResult.success) {
         console.log(`✅ Code runs successfully!`);
         logger.info('Run-and-Correct: code executed successfully.');
@@ -206,9 +353,9 @@ async function generateCode(prompt) {
         }]
       };
       allFiles = await fixAgent(finalFiles, runtimeQaResult, sharedContext);
-      finalFiles = dedupFiles(allFiles);
+      finalFiles = filterByStack(dedupFiles(allFiles), sharedContext.stack);
       for (const file of finalFiles) {
-        const filePath = path.join(process.cwd(), file.path);
+        const filePath = resolveFullPath(file.path);
         await fsp.mkdir(path.dirname(filePath), { recursive: true });
         await fsp.writeFile(filePath, file.content);
       }
@@ -234,11 +381,12 @@ async function generateCode(prompt) {
     console.log('🚀 Deploying live app...');
     logger.info('Starting Deployment Agent...');
     sharedContext.files = finalFiles;
-    const deployResult = await deployApp(process.cwd(), sharedContext);
+    const deployResult = await deployApp(outputBase, sharedContext);
     if (deployResult.success) {
       console.log(`\n🎉 Success! Your app is live at: ${deployResult.url}\n`);
       logger.info(`🚀 Deployment successful: ${deployResult.url}`);
        emitter.emit('log', `Deploy: ${deployResult.url}`);
+      memoryStore.recordRun({ stack: sharedContext.stack, outputBase, url: deployResult.url, files: finalFiles.map(f => f.path) });
     } else {
       console.log(`⚠️  Deployment skipped: ${deployResult.message}`);
       logger.warn(`Deployment skipped or failed: ${deployResult.message}`);

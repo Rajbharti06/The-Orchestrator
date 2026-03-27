@@ -39,7 +39,9 @@ async function fixAgent(allFiles, qaResult, sharedContext) {
         { role: "system", content: systemMessage },
         { role: "user", content: `Review these files:\n\n${fileSummary}\n\nQA Report: ${JSON.stringify(qaResult)}\n\nShared Context: ${JSON.stringify(sharedContext)}` }
       ],
-      model: process.env.MODEL_NAME
+      model: process.env.MODEL_NAME,
+      taskType: 'fix',
+      preferredProvider: (sharedContext.providers && sharedContext.providers.fix) || undefined
     });
     const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     let parsed;

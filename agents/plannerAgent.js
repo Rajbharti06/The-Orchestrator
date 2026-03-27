@@ -4,7 +4,7 @@ const { chatCompletion } = require('../lib/llmRouter');
  * Planner Agent
  * Breaks a high-level prompt into structured tasks for other agents.
  */
-async function plannerAgent(prompt) {
+async function plannerAgent(prompt, sharedContext) {
   if (process.env.MOCK === "true") {
     return {
       tasks: [
@@ -14,24 +14,28 @@ async function plannerAgent(prompt) {
     };
   }
 
+  const mem = sharedContext && sharedContext.memory ? sharedContext.memory : {};
   const systemMessage = `
     You are a senior software architect and planning expert.
-    Your task is to break down a user's high-level app idea into a series of structured tasks for specialized AI agents.
+    Break the user's high-level app idea into EXECUTABLE coding tasks for specialized agents.
+    Only return tasks that directly result in concrete files and runnable code.
     
-    You must identify which tasks should be handled by a "backend" agent and which by a "ui" agent.
-    Ensure the tasks are logical and follow a standard software development lifecycle (e.g., backend before frontend).
-
-    IMPORTANT: Return the response ONLY as a JSON object with a "tasks" array.
-    Each task object must have "type" (either "backend" or "ui") and "description" fields.
+    STRICT RULES:
+    - DO NOT include vague consulting steps like "choose framework" or "design schema".
+    - DO include specific file creation and implementation steps (e.g., "create src/app.js with Express server", "create src/routes/auth.js with POST /login").
+    - Ensure backend tasks precede UI tasks and align with shared endpoints.
+    - Return ONLY JSON with a "tasks" array. No prose, no markdown fences.
     
     Example:
     {
       "tasks": [
-        { "type": "backend", "description": "Build an Express API with JWT auth and a User model." },
-        { "type": "ui", "description": "Create a React login form that calls the backend API." }
+        { "type": "backend", "description": "create src/app.js (Express app, JWT, bcrypt, PostgreSQL connection)" },
+        { "type": "backend", "description": "create src/routes/auth.js (POST /register, /login, /refresh, /reset)" },
+        { "type": "ui", "description": "create src/components/Login.jsx (form calling /login)" }
       ]
     }
-    Do not include any markdown formatting or explanations.
+    
+    Relevant past memory (JSON): ${JSON.stringify(mem)}
   `;
 
   try {
@@ -40,7 +44,9 @@ async function plannerAgent(prompt) {
         { role: "system", content: systemMessage },
         { role: "user", content: prompt }
       ],
-      model: process.env.MODEL_NAME
+      model: process.env.MODEL_NAME,
+      taskType: 'planning',
+      preferredProvider: (sharedContext.providers && sharedContext.providers.planning) || undefined
     });
     const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     let plan;

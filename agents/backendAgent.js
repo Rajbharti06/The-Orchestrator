@@ -1,6 +1,6 @@
 const { chatCompletion } = require('../lib/llmRouter');
 
-async function backendAgent(prompt, sharedContext) {
+async function backendAgent(prompt, sharedContext, skillsList = []) {
   if (process.env.MOCK === "true") {
     sharedContext.apiEndpoints = ['/api/login', '/api/register'];
     return {
@@ -10,31 +10,51 @@ async function backendAgent(prompt, sharedContext) {
     };
   }
 
+  const stack = (sharedContext && sharedContext.stack) ? sharedContext.stack : {
+    backend: "FastAPI (Python)",
+    frontend: "React (JS + Tailwind)",
+    database: "PostgreSQL"
+  };
   const systemMessage = `
     You are a senior backend architect.
-    Your task is to generate complete, production-ready backend code based on the user's prompt.
-    For the prompt "build login system", you must produce a Node.js/Express application with JWT, bcrypt, and PostgreSQL.
+    Your task is to generate complete, production-ready backend code using the enforced stack.
+    
+    ENFORCED STACK:
+    - Backend: ${stack.backend}
+    - Database: ${stack.database}
+    
+    HARD RULES:
+    - You MUST use FastAPI (Python) for the backend.
+    - Do NOT generate Node.js/Express or JavaScript backend files.
+    - All backend files MUST be Python (.py). Create clear module structure (e.g., backend/app/main.py, backend/app/routes/*.py).
+    - Implement JWT auth, password hashing (bcrypt), and PostgreSQL integration.
     
     IMPORTANT: Return the response ONLY as a JSON object with a "files" array and an "apiEndpoints" array.
-    Each object in the "files" array must have "path" and "content" fields.
-    The "apiEndpoints" array should list the routes you created.
+    Each object in the "files" array must have "path" and "content" fields (Python files only for backend).
+    The "apiEndpoints" array should list the routes you created (e.g., "/api/register", "/api/login", "/api/refresh", "/api/reset").
     Example:
     {
       "files": [
-        { "path": "src/app.js", "content": "..." },
-        { "path": "src/routes/auth.js", "content": "..." }
+        { "path": "backend/app/main.py", "content": "..." },
+        { "path": "backend/app/routes/auth.py", "content": "..." }
       ],
-      "apiEndpoints": ["/api/login", "/api/register"]
+      "apiEndpoints": ["/api/register", "/api/login", "/api/refresh", "/api/reset"]
     }
-    Do not include any markdown formatting like \`\`\`json or explanations outside the JSON.
+    Do not include any markdown fences or explanations outside the JSON.
   `;
 
+  const skillsText = skillsList.length ? `Use skills: ${skillsList.join(', ')}` : '';
+  const memSummary = sharedContext && sharedContext.memory ? `Known recent issues: ${JSON.stringify(sharedContext.memory.lastIssues || [])}` : '';
+  const { skillsText } = require('../lib/skills');
+  const injection = skillsText(skillsList);
   const content = await chatCompletion({
     messages: [
-      { role: "system", content: systemMessage },
-      { role: "user", content: prompt }
+      { role: "system", content: `${systemMessage}\n${memSummary}\n${injection}` },
+      { role: "user", content: `${prompt}` }
     ],
-    model: process.env.MODEL_NAME
+    model: process.env.MODEL_NAME,
+    taskType: 'code',
+    preferredProvider: (sharedContext.providers && sharedContext.providers.code) || undefined
   });
   const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   let result;
