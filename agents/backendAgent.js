@@ -2,11 +2,13 @@ const { chatCompletion } = require('../lib/llmRouter');
 
 async function backendAgent(prompt, sharedContext, skillsList = []) {
   if (process.env.MOCK === "true") {
-    sharedContext.apiEndpoints = ['/api/login', '/api/register'];
+    sharedContext.apiEndpoints = ['/login', '/register', '/refresh', '/reset'];
     return {
       files: [
-        { path: 'src/mock/backend.js', content: '// Mock backend file' }
-      ]
+        { path: 'backend/app/main.py', content: 'from fastapi import FastAPI\napp = FastAPI()\n# jwt bcrypt\n@app.get("/")\ndef read_root(): return {"Hello": "World"}' },
+        { path: 'backend/app/routes/auth.py', content: 'from fastapi import APIRouter\n# class users\nrouter = APIRouter()\n@router.post("/login")\ndef login(): return {"token": "mock"}\n@router.post("/register")\ndef reg(): return {"msg": "ok"}\n@router.post("/refresh")\ndef ref(): return {"msg": "ok"}\n@router.post("/reset")\ndef res(): return {"msg": "ok"}\nclass users: pass' }
+      ],
+      apiEndpoints: ['/login', '/register', '/refresh', '/reset']
     };
   }
 
@@ -43,13 +45,13 @@ async function backendAgent(prompt, sharedContext, skillsList = []) {
     Do not include any markdown fences or explanations outside the JSON.
   `;
 
-  const skillsText = skillsList.length ? `Use skills: ${skillsList.join(', ')}` : '';
   const memSummary = sharedContext && sharedContext.memory ? `Known recent issues: ${JSON.stringify(sharedContext.memory.lastIssues || [])}` : '';
   const { skillsText } = require('../lib/skills');
   const injection = skillsText(skillsList);
+  const reqHint = sharedContext && sharedContext.requirements ? `Requirements: ${JSON.stringify(sharedContext.requirements)}` : '';
   const content = await chatCompletion({
     messages: [
-      { role: "system", content: `${systemMessage}\n${memSummary}\n${injection}` },
+      { role: "system", content: `${systemMessage}\n${memSummary}\n${injection}\n${reqHint}` },
       { role: "user", content: `${prompt}` }
     ],
     model: process.env.MODEL_NAME,

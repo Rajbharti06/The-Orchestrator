@@ -4,7 +4,7 @@ async function uiAgent(prompt, sharedContext, skillsList = []) {
   if (process.env.MOCK === "true") {
     return {
       files: [
-        { path: 'src/mock/ui.js', content: `// Mock UI file using endpoints: ${sharedContext.apiEndpoints.join(', ')}` }
+        { path: 'frontend/src/app.jsx', content: `import React from 'react';\n// API Endpoints: ${sharedContext.apiEndpoints.join(', ')}\nexport default function App() { return <div>StackForge UI</div>; }` }
       ]
     };
   }
@@ -42,13 +42,13 @@ async function uiAgent(prompt, sharedContext, skillsList = []) {
     Do not include any markdown formatting like \`\`\`json or explanations outside the JSON.
   `;
 
-  const skillsText = skillsList.length ? `Use skills: ${skillsList.join(', ')}` : '';
   const memSummary = sharedContext && sharedContext.memory ? `Known recent issues: ${JSON.stringify(sharedContext.memory.lastIssues || [])}` : '';
   const { skillsText } = require('../lib/skills');
   const injection = skillsText(skillsList);
+  const reqHint = sharedContext && sharedContext.requirements ? `Requirements: ${JSON.stringify(sharedContext.requirements)}` : '';
   const content = await chatCompletion({
     messages: [
-      { role: "system", content: `${systemMessage}\n${memSummary}\n${injection}` },
+      { role: "system", content: `${systemMessage}\n${memSummary}\n${injection}\n${reqHint}` },
       { role: "user", content: `${prompt}` }
     ],
     model: process.env.MODEL_NAME,
