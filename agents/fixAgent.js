@@ -43,18 +43,8 @@ async function fixAgent(allFiles, qaResult, sharedContext) {
       taskType: 'fix',
       preferredProvider: (sharedContext.providers && sharedContext.providers.fix) || undefined
     });
-    const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
-      const match = cleaned.match(/\{[\s\S]*\}/);
-      if (match) {
-        parsed = JSON.parse(match[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''));
-      } else {
-        throw new Error('Could not parse fix agent response as JSON');
-      }
-    }
+    const { extractJSON } = require('../lib/llmRouter');
+    let parsed = extractJSON(content);
     const updatedFiles = parsed.files;
     
     // Merge updated files back into the original allFiles array

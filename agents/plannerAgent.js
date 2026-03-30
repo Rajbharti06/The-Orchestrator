@@ -71,22 +71,12 @@ async function plannerAgent(prompt, sharedContext) {
         { role: "user", content: prompt }
       ],
       taskType: 'planning',
-      preferredProvider: (sharedContext.providers && sharedContext.providers.planning) || undefined
+      preferredProvider: 'groq'
     });
     
-    // Improved JSON cleaning and parsing
-    const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const { extractJSON } = require('../lib/llmRouter');
     let plan;
-    try {
-      plan = JSON.parse(cleaned);
-    } catch (parseError) {
-      const match = cleaned.match(/\{[\s\S]*\}/);
-      if (match) {
-        plan = JSON.parse(match[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''));
-      } else {
-        throw new Error("Failed to parse AI plan");
-      }
-    }
+    try { plan = extractJSON(content); } catch (parseError) { throw new Error("Failed to parse AI plan"); }
 
     if (!plan.tasks || !Array.isArray(plan.tasks)) {
       throw new Error("Invalid plan format: missing tasks array.");
@@ -95,11 +85,18 @@ async function plannerAgent(prompt, sharedContext) {
   } catch (error) {
     console.warn("AI Planner failed, using fallback plan:", error.message);
     return {
+      isFallback: true,
       tasks: [
-        { type: "backend", description: `Build full FastAPI backend for: ${prompt}` },
-        { type: "ui", description: `Build full React UI for: ${prompt}` }
+        { type: "backend", description: "Create backend/app/main.py with FastAPI initialization and CORS" },
+        { type: "backend", description: "Create backend/app/routes/auth.py with JWT /login and /register" },
+        { type: "ui", description: "Create frontend/src/App.jsx calling /api/login and /api/register" }
       ],
-      requirements: []
+      requirements: [
+        { type: "endpoint", value: "/api/login", priority: "critical", method: "POST", requestBody: { "username": "string", "password": "string" }, response: { "access_token": "string" } },
+        { type: "endpoint", value: "/api/register", priority: "critical", method: "POST", requestBody: { "username": "string", "password": "string" }, response: { "id": "string" } },
+        { type: "capability", value: "jwt", priority: "critical" },
+        { type: "capability", value: "password-hashing", priority: "high" }
+      ]
     };
   }
 }

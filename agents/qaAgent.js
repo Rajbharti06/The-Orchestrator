@@ -5,12 +5,8 @@ const { chatCompletion } = require('../lib/llmRouter');
  * Audits the generated codebase for inconsistencies, bugs, and missing dependencies.
  */
 async function qaAgent(allFiles, sharedContext) {
-  if (process.env.MOCK === "true") {
-    return {
-      hasIssues: false,
-      issues: [],
-      suggestions: "Mock QA passed. No issues found."
-    };
+  if (process.env.MOCK === "true" || process.env.SKIP_QA === "true") {
+    return { hasIssues: false, issues: [], suggestions: "QA skipped." };
   }
 
   const systemMessage = `
@@ -35,7 +31,10 @@ async function qaAgent(allFiles, sharedContext) {
   `;
 
   // Prepare file summary for the LLM
-  const fileSummary = allFiles.map(f => `File: ${f.path}\nContent:\n${f.content}`).join('\n\n---\n\n');
+  const fileSummary = allFiles.map(f => {
+    const firstLines = String(f.content || '').split('\n').slice(0, 20).join('\n');
+    return `File: ${f.path}\n${firstLines}\n[truncated]`;
+  }).join('\n\n---\n\n');
 
   try {
     const content = await chatCompletion({

@@ -18,28 +18,10 @@ async function uiAgent(prompt, sharedContext, skillsList = []) {
 
   const systemMessage = `
     You are a senior frontend developer.
-    Your task is to generate complete, production-ready frontend code using the enforced stack.
-    ${apiInfo}
-    
-    ENFORCED STACK:
-    - Frontend: ${stack.frontend}
-    
-    HARD RULES:
-    - You MUST use React with JSX. Do NOT use Vue or Angular.
-    - Use Tailwind CSS for styling.
-    - All frontend component files MUST be .jsx (e.g., frontend/src/components/Login.jsx).
-    - Ensure the frontend calls the provided backend endpoints.
-    
-    IMPORTANT: Return the response ONLY as a JSON object with a "files" array.
-    Each object in the "files" array must have "path" and "content" fields (React .jsx and CSS files only for frontend).
-    Example:
-    {
-      "files": [
-        { "path": "frontend/src/App.jsx", "content": "..." },
-        { "path": "frontend/src/components/Login.jsx", "content": "..." }
-      ]
-    }
-    Do not include any markdown formatting like \`\`\`json or explanations outside the JSON.
+    Generate ONLY ONE React file per response (.jsx or .css).
+    Use the provided endpoints: ${sharedContext.apiEndpoints ? sharedContext.apiEndpoints.join(', ') : 'none'}.
+    Return STRICT JSON with keys "path" and "content".
+    Keep content under 300 lines. No explanations.
   `;
 
   const memSummary = sharedContext && sharedContext.memory ? `Known recent issues: ${JSON.stringify(sharedContext.memory.lastIssues || [])}` : '';
@@ -55,17 +37,17 @@ async function uiAgent(prompt, sharedContext, skillsList = []) {
     taskType: 'code',
     preferredProvider: (sharedContext.providers && sharedContext.providers.code) || undefined
   });
-  const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  const { extractJSON } = require('../lib/llmRouter');
   let result;
   try {
-    result = JSON.parse(cleaned);
+    result = extractJSON(content);
   } catch (e) {
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) {
-      result = JSON.parse(match[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''));
-    } else {
-      throw new Error('Could not parse ui agent response as JSON');
-    }
+    const pathMatch = String(prompt).match(/frontend\/src\/[a-zA-Z0-9_\/-]+\.(jsx|css)/);
+    const inferredPath = pathMatch ? pathMatch[0] : 'frontend/src/App.jsx';
+    result = { files: [{ path: inferredPath, content: content }] };
+  }
+  if (!result.files && result.path && result.content) {
+    result = { files: [{ path: result.path, content: result.content }] };
   }
   return result;
 }

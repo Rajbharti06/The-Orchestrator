@@ -18,31 +18,11 @@ async function backendAgent(prompt, sharedContext, skillsList = []) {
     database: "PostgreSQL"
   };
   const systemMessage = `
-    You are a senior backend architect.
-    Your task is to generate complete, production-ready backend code using the enforced stack.
-    
-    ENFORCED STACK:
-    - Backend: ${stack.backend}
-    - Database: ${stack.database}
-    
-    HARD RULES:
-    - You MUST use FastAPI (Python) for the backend.
-    - Do NOT generate Node.js/Express or JavaScript backend files.
-    - All backend files MUST be Python (.py). Create clear module structure (e.g., backend/app/main.py, backend/app/routes/*.py).
-    - Implement JWT auth, password hashing (bcrypt), and PostgreSQL integration.
-    
-    IMPORTANT: Return the response ONLY as a JSON object with a "files" array and an "apiEndpoints" array.
-    Each object in the "files" array must have "path" and "content" fields (Python files only for backend).
-    The "apiEndpoints" array should list the routes you created (e.g., "/api/register", "/api/login", "/api/refresh", "/api/reset").
-    Example:
-    {
-      "files": [
-        { "path": "backend/app/main.py", "content": "..." },
-        { "path": "backend/app/routes/auth.py", "content": "..." }
-      ],
-      "apiEndpoints": ["/api/register", "/api/login", "/api/refresh", "/api/reset"]
-    }
-    Do not include any markdown fences or explanations outside the JSON.
+    You are a senior backend architect using FastAPI (Python).
+    Generate only one backend Python file per response.
+    Return strict JSON with keys "path" and "content".
+    Keep content under 400 lines.
+    No markdown or explanations.
   `;
 
   const memSummary = sharedContext && sharedContext.memory ? `Known recent issues: ${JSON.stringify(sharedContext.memory.lastIssues || [])}` : '';
@@ -58,25 +38,30 @@ async function backendAgent(prompt, sharedContext, skillsList = []) {
     taskType: 'code',
     preferredProvider: (sharedContext.providers && sharedContext.providers.code) || undefined
   });
-  const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-  let result;
+  const { extractJSON } = require('../lib/llmRouter');
+  let fileObj;
   try {
-    result = JSON.parse(cleaned);
+    fileObj = extractJSON(content);
   } catch (e) {
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) {
-      result = JSON.parse(match[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''));
-    } else {
-      throw new Error('Could not parse backend agent response as JSON');
-    }
+    const pathMatch = String(prompt).match(/backend\/app\/[a-zA-Z0-9_\/-]+\.py/);
+    const inferredPath = pathMatch ? pathMatch[0] : 'backend/app/main.py';
+    fileObj = { path: inferredPath, content: content };
   }
-  
-  if (result.apiEndpoints) {
-    sharedContext.apiEndpoints = result.apiEndpoints;
-  }
-  sharedContext.files = result.files;
+  const endpoints = extractEndpoints(fileObj.content || '');
+  sharedContext.apiEndpoints = Array.from(new Set([...(sharedContext.apiEndpoints || []), ...endpoints]));
+  sharedContext.files = Array.from(new Set([...(sharedContext.files || []), fileObj]));
 
-  return result;
+  return { files: [fileObj], apiEndpoints: endpoints };
+}
+
+function extractEndpoints(content) {
+  const out = new Set();
+  const regex = /@(?:app|router)\.(get|post|put|delete|patch)\(\s*['"]([^'"]+)['"]/g;
+  let m;
+  while ((m = regex.exec(content)) !== null) {
+    out.add(m[2]);
+  }
+  return Array.from(out);
 }
 
 module.exports = { backendAgent };

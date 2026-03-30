@@ -1,2 +1,12 @@
 .env
 node_modules/
+__pycache__/
+*.log
+logs/
+memory/
+backend/
+frontend/
+src/
+dist/
+build/
+.a34458c42d7eeaa724a3efa755faf08b4b9fbaf7-audit.json
