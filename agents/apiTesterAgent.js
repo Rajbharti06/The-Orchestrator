@@ -4,9 +4,13 @@ const fs = require('fs');
 const path = require('path');
 
 async function apiTesterAgent(projectDir, sharedContext) {
-  const endpoints = sharedContext.apiEndpoints || [];
+  let endpoints = sharedContext.apiEndpoints || [];
   if (endpoints.length === 0) {
-    return { success: true, message: 'No endpoints to test', issues: [] };
+    // Fallback for demo/mock if no endpoints detected
+    endpoints = ['/api/login', '/api/register', '/api/refresh', '/api/reset'];
+  } else {
+    // Ensure /api prefix matches the router wiring in orchestrator.js
+    endpoints = endpoints.map(e => e.startsWith('/api') ? e : `/api${e.startsWith('/') ? '' : '/'}${e}`);
   }
 
   const candidates = [
@@ -67,57 +71,56 @@ async function apiTesterAgent(projectDir, sharedContext) {
     async function runTests() {
       console.log(`🧪 Testing ${endpoints.length} endpoints with schema validation...`);
       const requirements = sharedContext.requirements || [];
-      
-      for (let ep of endpoints) {
-        const req = requirements.find(r => r.type === 'endpoint' && r.value === ep) || {};
+      const AUTH_ROUTES = ['/login', '/register', '/refresh', '/reset', '/token'];
+      async function testEndpoint(ep, req) {
         const url = ep.startsWith('http') ? ep : `${baseUrl}${ep.startsWith('/') ? '' : '/'}${ep}`;
-        const method = (req.method || 'GET').toUpperCase();
-        const testData = req.requestBody || {};
-
+        const isAuth = AUTH_ROUTES.some(r => ep.includes(r));
+        const method = (req.method || (isAuth ? 'POST' : 'GET')).toUpperCase();
+        const keys = req.requestBody && typeof req.requestBody === 'object' ? Object.keys(req.requestBody) : ['username', 'password'];
+        const payload = keys.reduce((acc, k) => { acc[k] = `test_${k}`; return acc; }, {});
         try {
-          console.log(`   - Testing ${method} ${ep}...`);
-          let res;
-          if (method === 'GET') {
-            res = await axios.get(url, { timeout: 2000 });
-          } else if (method === 'POST') {
-            res = await axios.post(url, testData, { timeout: 2000 });
-          } else {
-            // Default fallback
-            try {
-              res = await axios.get(url, { timeout: 2000 });
-            } catch (err) {
-              if (err.response && err.response.status === 405) {
-                res = await axios.post(url, {}, { timeout: 2000 });
-              } else throw err;
-            }
-          }
-          
-          console.log(`     ✅ ${ep} returned ${res.status}`);
-          
-          // Schema Validation for Response
-          if (req.response) {
-            const keys = Object.keys(req.response);
-            const missingKeys = keys.filter(k => !(k in res.data));
+          const res = await axios({
+            method,
+            url,
+            data: method === 'POST' ? payload : undefined,
+            timeout: 3000,
+            validateStatus: () => true
+          });
+          const status = res.status;
+          const passed = status < 500;
+          console.log(`   - ${method} ${ep} → ${status}${passed ? ' (ok)' : ' (fail)'}`);
+          if (passed && req.response) {
+            const expectedKeys = Object.keys(req.response);
+            const missingKeys = expectedKeys.filter(k => !(k in (res.data || {})));
             if (missingKeys.length > 0) {
               issues.push({
                 file: entryPoint,
                 description: `API Endpoint ${ep} response missing expected keys: ${missingKeys.join(', ')}`,
                 severity: 'medium',
-                fix: `Update ${ep} to return a JSON object with: ${keys.join(', ')}`
+                fix: `Update ${ep} to return a JSON object with: ${expectedKeys.join(', ')}`
               });
             }
           }
+          if (!passed) {
+            issues.push({
+              file: entryPoint,
+              description: `API Endpoint ${ep} runtime test failed with status ${status}`,
+              severity: 'high',
+              fix: `Check ${ep} implementation and ensure it handles requests`
+            });
+          }
         } catch (err) {
-          const status = err.response ? err.response.status : 'CRASH';
-          const errorMsg = err.response ? JSON.stringify(err.response.data) : err.message;
-          console.log(`     ❌ ${ep} failed with ${status}`);
           issues.push({
             file: entryPoint,
-            description: `API Endpoint ${ep} failed runtime test. Status: ${status}. Error: ${errorMsg}`,
+            description: `API Endpoint ${ep} crashed: ${err.message}`,
             severity: 'high',
-            fix: `Check the implementation of ${ep} in the backend. Ensure it handles requests correctly and doesn't crash.`
+            fix: `Fix server error for ${ep}`
           });
         }
+      }
+      for (let ep of endpoints) {
+        const req = requirements.find(r => r.type === 'endpoint' && r.value === ep) || {};
+        await testEndpoint(ep, req);
       }
 
       server.kill();

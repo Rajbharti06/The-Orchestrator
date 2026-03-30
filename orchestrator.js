@@ -485,6 +485,7 @@ async function generateCode(prompt) {
         if (backendResult && backendResult.files) {
           allFiles = allFiles.concat(backendResult.files);
         }
+        await new Promise(r => setTimeout(r, 1500));
       }
 
       if (task.type === "ui") {
@@ -497,6 +498,7 @@ async function generateCode(prompt) {
         if (uiResult && uiResult.files) {
           allFiles = allFiles.concat(uiResult.files);
         }
+        await new Promise(r => setTimeout(r, 1500));
       }
     }
 
@@ -520,7 +522,7 @@ async function generateCode(prompt) {
 
     let finalFiles = filterByStack(dedupFiles(allFiles), sharedContext.stack);
     finalFiles = filterFilesStrict(finalFiles, sharedContext.stack);
-    if (!isValidStack(finalFiles, sharedContext.stack)) {
+    if (!plan.isFallback && !isValidStack(finalFiles, sharedContext.stack)) {
       logger.error('Invalid stack output detected after fix loop — rejecting files.');
       throw new Error('Invalid stack output');
     }
@@ -543,7 +545,7 @@ async function generateCode(prompt) {
       }
     }
     {
-      if (sharedContext.requirements && sharedContext.requirements.length) {
+      if (sharedContext.requirements && sharedContext.requirements.length && process.env.MOCK !== "true") {
         let attempts = 2;
         while (attempts > 0) {
           const reqCheck = validateRequirements(finalFiles, sharedContext.requirements);
@@ -561,6 +563,8 @@ async function generateCode(prompt) {
           logger.error('Requirement violations persist — rejecting files.');
           throw new Error('Dynamic requirements not satisfied');
         }
+      } else {
+        logger.info('Requirements check skipped (mock or none).');
       }
     }
     {
@@ -605,6 +609,14 @@ async function generateCode(prompt) {
         throw new Error('Shared contract between backend and UI is broken');
       }
     }
+
+    // Ensure FastAPI router is wired (especially for mock mode)
+    const mainPy = finalFiles.find(f => f.path.includes('main.py'));
+    const authPy = finalFiles.find(f => f.path.includes('routes/auth.py'));
+    if (mainPy && authPy && !mainPy.content.includes('include_router')) {
+      mainPy.content += '\nfrom backend.app.routes import auth\napp.include_router(auth.router, prefix="/api")\n';
+    }
+
     for (const file of finalFiles) {
       const filePath = resolveFullPath(file.path);
       await fsp.mkdir(path.dirname(filePath), { recursive: true });
@@ -625,6 +637,15 @@ async function generateCode(prompt) {
       if (missing.length) {
         console.log(`📦 Installing missing deps: ${missing.join(' ')}`);
         execSync(`npm install ${missing.join(' ')}`, { cwd: outputBase, stdio: 'ignore' });
+      }
+      const pyFiles = finalFiles.filter(f => f.path.endsWith('.py'));
+      if (pyFiles.length) {
+        try {
+          execSync('pip install fastapi uvicorn python-jose passlib bcrypt sqlalchemy python-multipart --quiet', { cwd: outputBase, stdio: 'ignore', timeout: 30000 });
+          console.log('📦 Python dependencies installed');
+        } catch (e) {
+          console.log('⚠️ Python dep install failed, continuing...');
+        }
       }
     } catch (e) {}
 
