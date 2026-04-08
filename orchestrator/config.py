@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Orchestrator X — central configuration.
+Orchestrator X - central configuration.
 
 All tunable parameters live here. Override any value with an environment
 variable of the same name (upper-cased), e.g.:
@@ -55,7 +55,7 @@ MAX_SKILLS_PER_PROMPT: int = _int("ORCHESTRATOR_MAX_SKILLS", 5)
 MAX_CHARS_PER_SKILL:   int = _int("ORCHESTRATOR_MAX_CHARS_PER_SKILL", 1200)
 
 # ---------------------------------------------------------------------------
-# Tools — timeouts (seconds)
+# Tools - timeouts (seconds)
 # ---------------------------------------------------------------------------
 
 SYSTEM_OPERATOR_TIMEOUT: int = _int("ORCHESTRATOR_SYSTEM_TIMEOUT", 30)
@@ -70,9 +70,9 @@ ENV_PROBE_TIMEOUT:       int = _int("ORCHESTRATOR_ENV_PROBE_TIMEOUT", 20)
 # ---------------------------------------------------------------------------
 
 APPROVAL_MODE: str = _str("ORCHESTRATOR_APPROVAL", "suggest")
-# auto     – execute everything, never ask
-# suggest  – ask before shell commands, deploys, and git commits (default)
-# manual   – ask before every single action
+# auto     - execute everything, never ask
+# suggest  - ask before shell commands, deploys, and git commits (default)
+# manual   - ask before every single action
 
 # ---------------------------------------------------------------------------
 # LLM

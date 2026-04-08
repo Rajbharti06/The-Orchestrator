@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-SwarmManager — Orchestrator X
+SwarmManager - Orchestrator X
 
 Runs independent tasks in parallel using a thread pool.
 Tasks with `depends_on` entries (or explicit `parallel: false`) are
@@ -52,7 +52,7 @@ class SwarmManager:
     Parallel agent execution engine.
 
     Workers share the same RuntimeExecutor (which is thread-safe as long
-    as individual tools are — FileEngine and SystemOperator both acquire
+    as individual tools are - FileEngine and SystemOperator both acquire
     no shared locks so this is safe).
     """
 
@@ -140,14 +140,14 @@ class SwarmManager:
                         report.succeeded.append(task)
                         self._on_event(
                             "success",
-                            f"[{swarm_result.thread_name}] {task.get('description', '?')} — OK",
+                            f"[{swarm_result.thread_name}] {task.get('description', '?')} - OK",
                         )
                     else:
                         report.failed.append(task)
                         self._on_event(
                             "fail",
                             f"[{swarm_result.thread_name}] {task.get('description', '?')} "
-                            f"— FAILED: {swarm_result.result.error}",
+                            f"- FAILED: {swarm_result.result.error}",
                         )
                 except Exception as exc:  # noqa: BLE001
                     report.failed.append(task)

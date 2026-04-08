@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Built-in agent roles — Orchestrator X
+Built-in agent roles - Orchestrator X
 
 Five specialized roles form an autonomous development team:
   Architect  -> plans structure and dependencies

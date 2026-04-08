@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Skill engine — Orchestrator X
+Skill engine - Orchestrator X
 
 Two-tier skill resolution:
   1. Fast index lookup:  skills_index.json (889 skills, zero file I/O per run)
@@ -29,7 +29,7 @@ from ..config import MAX_SKILLS_PER_PROMPT, MAX_CHARS_PER_SKILL as _MAX_CHARS_PE
 # Paths
 # ---------------------------------------------------------------------------
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]   # …/REAL PROJECTS/Claude
+_REPO_ROOT = Path(__file__).resolve().parents[3]   # .../REAL PROJECTS/Claude
 _SKILLS_BASE = _REPO_ROOT / "antigravity-awesome-skills"
 _INDEX_FILE  = _SKILLS_BASE / "skills_index.json"
 
@@ -100,7 +100,7 @@ def _load_skill_content(skill_path: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Scoring – keyword overlap between prompt tokens and skill name+description
+# Scoring - keyword overlap between prompt tokens and skill name+description
 # ---------------------------------------------------------------------------
 
 _STOP_WORDS = frozenset(
@@ -204,7 +204,7 @@ _BUILTIN_CATALOG: dict[str, dict] = {
     "@python-debug": {
         "tags": ["debug", "fix", "error", "traceback", "bug"],
         "context": (
-            "Python debugging: read the FULL traceback bottom-to-top — the last frame is where "
+            "Python debugging: read the FULL traceback bottom-to-top - the last frame is where "
             "the error occurred. Use ast.parse() to check syntax before running. "
             "Check NameError (typos), TypeError (wrong types), SyntaxError (line numbers)."
         ),
@@ -230,7 +230,7 @@ _BUILTIN_CATALOG: dict[str, dict] = {
         "context": (
             "Python scripts must have a main() function and if __name__ == '__main__': guard. "
             "Use type hints. Keep functions under 20 lines. "
-            "No bare except clauses – catch specific exceptions."
+            "No bare except clauses - catch specific exceptions."
         ),
     },
     "@python-self-healing": {

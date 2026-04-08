@@ -19,7 +19,7 @@ class LLMProvider:
 # ---------------------------------------------------------------------------
 
 class ClaudeProvider(LLMProvider):
-    """Anthropic Claude – best reasoning and code generation."""
+    """Anthropic Claude - best reasoning and code generation."""
 
     def __init__(self, model: str = "claude-sonnet-4-6"):
         import anthropic
@@ -37,7 +37,7 @@ class ClaudeProvider(LLMProvider):
 
 
 class GroqProvider(LLMProvider):
-    """Groq – fast inference for open-source models."""
+    """Groq - fast inference for open-source models."""
 
     def __init__(self, model: str = "llama-3.3-70b-versatile"):
         from groq import Groq
@@ -58,7 +58,7 @@ class GroqProvider(LLMProvider):
 
 
 class OllamaProvider(LLMProvider):
-    """Local Ollama – offline / private operation."""
+    """Local Ollama - offline / private operation."""
 
     def __init__(self, model: str = "llama3", base_url: str = "http://localhost:11434"):
         self.model = model
@@ -79,7 +79,7 @@ class OllamaProvider(LLMProvider):
 
 
 class KimiProvider(LLMProvider):
-    """Kimi K2.5 via Ollama cloud – frontier model, proper chat API."""
+    """Kimi K2.5 via Ollama cloud - frontier model, proper chat API."""
 
     def __init__(self, model: str = "kimi-k2.5:cloud", base_url: str = "http://localhost:11434"):
         self.model = model
@@ -104,13 +104,13 @@ class KimiProvider(LLMProvider):
                 return response.json().get("message", {}).get("content", "")
             except httpx.ReadTimeout:
                 if attempt == 0:
-                    print("[Kimi] Response timeout — retrying …")
+                    print("[Kimi] Response timeout - retrying ...")
                     continue
                 raise
 
 
 # ---------------------------------------------------------------------------
-# Fallback chain – tries providers in order with exponential backoff
+# Fallback chain - tries providers in order with exponential backoff
 # ---------------------------------------------------------------------------
 
 class FallbackChainProvider(LLMProvider):
@@ -127,14 +127,14 @@ class FallbackChainProvider(LLMProvider):
             except Exception as e:
                 last_error = e
                 if i < len(self.providers) - 1:
-                    wait = 2 ** i  # 1 s, 2 s, 4 s …
-                    print(f"[LLMBrain] Provider {type(provider).__name__} failed ({e}). Retrying in {wait}s …")
+                    wait = 2 ** i  # 1 s, 2 s, 4 s ...
+                    print(f"[LLMBrain] Provider {type(provider).__name__} failed ({e}). Retrying in {wait}s ...")
                     time.sleep(wait)
         raise RuntimeError(f"All providers failed. Last error: {last_error}")
 
 
 # ---------------------------------------------------------------------------
-# Mock provider – deterministic, no API key needed
+# Mock provider - deterministic, no API key needed
 # ---------------------------------------------------------------------------
 
 class MockProvider(LLMProvider):
@@ -284,7 +284,7 @@ def _build_provider(provider_type: str) -> LLMProvider:
 
 
 # ---------------------------------------------------------------------------
-# LLMBrain – the public reasoning interface
+# LLMBrain - the public reasoning interface
 # ---------------------------------------------------------------------------
 
 class LLMBrain:
@@ -330,18 +330,18 @@ class LLMBrain:
                     learned_ctx += f"  - [{', '.join(tools)}] {notes}\n"
 
         system_prompt = (
-            "You are the Orchestrator X Planner – a senior software architect.\n"
+            "You are the Orchestrator X Planner - a senior software architect.\n"
             "Decompose the user's goal into a dependency-aware, ordered list of JSON tasks.\n"
             "\nAvailable tools:\n"
-            "  FileEngine     – actions: write | read | edit\n"
+            "  FileEngine     - actions: write | read | edit\n"
             "                   payload: {action, path, content?, old_str?, new_str?}\n"
-            "  SystemOperator – run shell/CLI commands\n"
+            "  SystemOperator - run shell/CLI commands\n"
             "                   payload: {command, cwd?}\n"
-            "  DeployAgent    – launch a web app and return its URL\n"
+            "  DeployAgent    - launch a web app and return its URL\n"
             "                   payload: {file, host?, port?}\n"
-            "  GitTool        – git operations: status | diff | log | add | commit | branch | show\n"
+            "  GitTool        - git operations: status | diff | log | add | commit | branch | show\n"
             "                   payload: {action, files?, message?, n?, staged?, ref?, cwd?}\n"
-            "  WebSearchTool  – search the web for information\n"
+            "  WebSearchTool  - search the web for information\n"
             "                   payload: {query, max_results?}\n"
             "\nTask schema:\n"
             '  {"id": "unique-id", "description": "...", "tool": "...", '
@@ -408,8 +408,8 @@ class LLMBrain:
                 failure_context.get("error_excerpt", ""),
                 last_fix_summary,
             )
-            print(f"[Reflection] Root cause: {reflection.get('root_cause', '—')}")
-            print(f"[Reflection] New approach: {reflection.get('different_approach', '—')}")
+            print(f"[Reflection] Root cause: {reflection.get('root_cause', '-')}")
+            print(f"[Reflection] New approach: {reflection.get('different_approach', '-')}")
 
         wins_hint = ""
         if winning_fixes:
@@ -424,13 +424,13 @@ class LLMBrain:
             "Given the failed task, the FULL error traceback, the source code, and prior fix attempts, "
             "return ONE JSON fix plan.\n"
             "Keys:\n"
-            "  mode         – 'replace_text' or 'rewrite_file'\n"
-            "  target_file  – path to the file to fix\n"
-            "  old_text     – exact text to replace (replace_text mode)\n"
-            "  new_text     – replacement text (replace_text mode)\n"
-            "  new_content  – full file content (rewrite_file mode)\n"
-            "  summary      – one-line explanation of what was fixed\n"
-            "  error_type   – short label for the error class (e.g. NameError, SyntaxError)\n"
+            "  mode         - 'replace_text' or 'rewrite_file'\n"
+            "  target_file  - path to the file to fix\n"
+            "  old_text     - exact text to replace (replace_text mode)\n"
+            "  new_text     - replacement text (replace_text mode)\n"
+            "  new_content  - full file content (rewrite_file mode)\n"
+            "  summary      - one-line explanation of what was fixed\n"
+            "  error_type   - short label for the error class (e.g. NameError, SyntaxError)\n"
             "Prefer replace_text for targeted, minimal fixes.\n"
             "Use rewrite_file only when the logic is fundamentally broken.\n"
             "NEVER repeat a strategy that already failed.\n"
@@ -555,8 +555,8 @@ class LLMBrain:
             "Given the original task, the verification failure reason, and a reflection, "
             "produce an updated task payload that addresses the verification failure.\n"
             "Return JSON with keys:\n"
-            "  payload  – the updated task payload dict (same structure as original)\n"
-            "  reason   – one-line explanation of what you changed\n"
+            "  payload  - the updated task payload dict (same structure as original)\n"
+            "  reason   - one-line explanation of what you changed\n"
             "Return ONLY valid JSON, no markdown.\n"
             + fixes_hint
         )

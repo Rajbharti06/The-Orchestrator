@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Evaluator — Orchestrator X
+Evaluator - Orchestrator X
 
 Runs benchmark tasks against the OrchestratorCore and produces a
 scored report.  Tracks pass rate, attempt count, and wall-clock time.

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 """
-EnvironmentProbe – captures the runtime environment once at startup and
+EnvironmentProbe - captures the runtime environment once at startup and
 makes it available for injection into every LLM system prompt.
 
 This tells the LLM exactly what it's working with so it stops guessing:
-  • Python version
-  • OS / platform
-  • Installed packages (no more "pip install X" suggestions for already-installed libs)
-  • Workspace file tree (understands what already exists)
-  • Available CLI tools (python, git, node, etc.)
+  * Python version
+  * OS / platform
+  * Installed packages (no more "pip install X" suggestions for already-installed libs)
+  * Workspace file tree (understands what already exists)
+  * Available CLI tools (python, git, node, etc.)
 """
 
 import importlib.util

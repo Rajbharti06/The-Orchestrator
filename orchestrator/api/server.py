@@ -217,7 +217,7 @@ def index() -> str:
   <div class="main">
     <div class="panel">
       <div class="row">
-        <input type="text" id="prompt" placeholder="Enter a goal — e.g. build a FastAPI CRUD API and run it" />
+        <input type="text" id="prompt" placeholder="Enter a goal - e.g. build a FastAPI CRUD API and run it" />
         <select id="provider">
           <option value="mock">mock</option>
           <option value="auto">auto</option>
@@ -285,7 +285,7 @@ def index() -> str:
       if (!prompt) return;
       if (ws) {{ ws.close(); ws = null; }}
       logEl.innerHTML = "";
-      metaEl.textContent = "Starting …";
+      metaEl.textContent = "Starting ...";
       skillsEl.textContent = "";
 
       const response = await fetch("/runs", {{

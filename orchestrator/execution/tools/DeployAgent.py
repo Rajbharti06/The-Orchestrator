@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 """
-DeployAgent – detects what kind of Python web app lives in a file,
+DeployAgent - detects what kind of Python web app lives in a file,
 launches it as a background process, waits for the port to open,
 and returns the live URL.
 
 Supported app types:
-  • FastAPI  -> uvicorn <module>:app
-  • Flask    -> flask --app <file> run
-  • Streamlit -> streamlit run <file>
-  • Generic  -> python <file>  (no URL check, just runs)
+  * FastAPI  -> uvicorn <module>:app
+  * Flask    -> flask --app <file> run
+  * Streamlit -> streamlit run <file>
+  * Generic  -> python <file>  (no URL check, just runs)
 
 The launched process is tracked so it can be reported (PID + URL).
 The caller is responsible for terminating the process when done.
@@ -39,7 +39,7 @@ class DeployAgent:
 
     def run(self, payload: dict) -> ExecutionResult:
         file_path = payload.get("file") or payload.get("path")
-        # Always bind to 127.0.0.1 — 0.0.0.0 triggers WinError 10013 on Windows
+        # Always bind to 127.0.0.1 - 0.0.0.0 triggers WinError 10013 on Windows
         raw_host = payload.get("host", "127.0.0.1")
         host = "127.0.0.1" if raw_host in ("0.0.0.0", "::") else raw_host
         port = int(payload.get("port", 0)) or self._find_free_port()
@@ -63,7 +63,7 @@ class DeployAgent:
         # If requested port is already in use, check if it's already serving our app
         if port and self._port_open(host, port):
             url = f"http://{host}:{port}"
-            print(f"[DeployAgent] Port {port} already in use — reusing {url}")
+            print(f"[DeployAgent] Port {port} already in use - reusing {url}")
             return ExecutionResult(
                 self.name, True,
                 f"App already running at {url}",
@@ -85,7 +85,7 @@ class DeployAgent:
             )
             self._processes[proc.pid] = proc
 
-            # Generic scripts don't expose a port – just return success
+            # Generic scripts don't expose a port - just return success
             if app_type == "generic":
                 time.sleep(1)
                 if proc.poll() is not None:
@@ -97,7 +97,7 @@ class DeployAgent:
                     )
                 return ExecutionResult(
                     self.name, True,
-                    f"Process started (PID {proc.pid}). No URL – generic script.",
+                    f"Process started (PID {proc.pid}). No URL - generic script.",
                     diagnostics={"pid": proc.pid, "app_type": app_type},
                 )
 

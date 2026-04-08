@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-GitTool — Orchestrator X
+GitTool - Orchestrator X
 
 Exposes git operations as a first-class tool so the agent can inspect,
 stage, commit, and diff code as part of any automated workflow.
@@ -116,7 +116,7 @@ class GitTool:
         except subprocess.TimeoutExpired:
             return self._fail("git command timed out after 15s")
         except FileNotFoundError:
-            return self._fail("git not found — is git installed and on PATH?")
+            return self._fail("git not found - is git installed and on PATH?")
         except Exception as exc:
             return self._fail(str(exc))
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-TestTool — Orchestrator X
+TestTool - Orchestrator X
 
 Runs pytest and can auto-generate a basic test stub for a Python file.
 
@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from ..tool_registry import ExecutionResult
-from ....config import SYSTEM_OPERATOR_TIMEOUT
+from ...config import SYSTEM_OPERATOR_TIMEOUT
 
 
 class TestTool:

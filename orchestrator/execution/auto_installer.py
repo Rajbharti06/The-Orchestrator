@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-AutoInstaller – detects missing Python imports in a script and installs
+AutoInstaller - detects missing Python imports in a script and installs
 them with pip before execution, so the agent never fails on a missing
 dependency it could have installed itself.
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .env_probe import EnvironmentProbe
 
 
-# Common import name -> PyPI package name mappings (import name ≠ pip name)
+# Common import name -> PyPI package name mappings (import name != pip name)
 _IMPORT_TO_PIP: dict[str, str] = {
     "cv2": "opencv-python",
     "PIL": "Pillow",

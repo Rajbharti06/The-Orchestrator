@@ -4,12 +4,12 @@ from __future__ import annotations
 OrchestratorCore X
 
 Capabilities:
-  • EnvironmentProbe   – captured once at startup, injected into every LLM call
-  • AutoInstaller      – pip-installs missing imports before execution
-  • DeployAgent        – registered as a first-class tool; runs apps and returns URLs
-  • DAG executor       – tasks carry optional depends_on; execution respects order
-  • Persistent intel   – winning fix patterns fed back to Fix Agent across sessions
-  • Success tracking   – records what worked so the brain learns over time
+  * EnvironmentProbe   - captured once at startup, injected into every LLM call
+  * AutoInstaller      - pip-installs missing imports before execution
+  * DeployAgent        - registered as a first-class tool; runs apps and returns URLs
+  * DAG executor       - tasks carry optional depends_on; execution respects order
+  * Persistent intel   - winning fix patterns fed back to Fix Agent across sessions
+  * Success tracking   - records what worked so the brain learns over time
 """
 
 import copy
@@ -39,11 +39,11 @@ from .strategy import StrategyLayer
 class OrchestratorCore:
     """
     provider_type options:
-        "mock"   – deterministic, no API key needed (great for testing)
-        "claude" – Anthropic Claude  (ANTHROPIC_API_KEY env var)
-        "groq"   – Groq fast inference (GROQ_API_KEY env var)
-        "ollama" – local Ollama instance
-        "auto"   – Claude -> Groq -> Ollama -> Mock fallback chain
+        "mock"   - deterministic, no API key needed (great for testing)
+        "claude" - Anthropic Claude  (ANTHROPIC_API_KEY env var)
+        "groq"   - Groq fast inference (GROQ_API_KEY env var)
+        "ollama" - local Ollama instance
+        "auto"   - Claude -> Groq -> Ollama -> Mock fallback chain
     """
 
     def __init__(self, provider_type: str = "mock", approval_mode: str = APPROVAL_MODE):
@@ -66,8 +66,8 @@ class OrchestratorCore:
         self.strategy_layer = StrategyLayer()
         self.max_retries = MAX_RETRIES
 
-        # Capture environment once — injected into every LLM call
-        print("[Orchestrator] Probing environment …")
+        # Capture environment once - injected into every LLM call
+        print("[Orchestrator] Probing environment ...")
         self.env = EnvironmentProbe.capture()
         self.env_context = EnvironmentProbe.format_for_llm(self.env)
 
@@ -82,7 +82,7 @@ class OrchestratorCore:
         print(f"\n[Orchestrator X] Session: {self.session_id}")
         print(f"Goal: {prompt}\n")
 
-        # Skill injection — uses 889-skill catalog when available
+        # Skill injection - uses 889-skill catalog when available
         skill_context = select_skills(prompt)
         if agents_context:
             skill_context = agents_context + "\n\n" + skill_context
@@ -91,7 +91,7 @@ class OrchestratorCore:
             print(f"[Skills] {len(matched_skills)} skill(s) injected from catalog ({skill_count()} total): "
                   f"{', '.join(matched_skills) or 'built-in'}")
 
-        # Strategy analysis — classify goal BEFORE planning
+        # Strategy analysis - classify goal BEFORE planning
         strategy = self.strategy_layer.analyze(prompt)
         print(f"[Strategy] {strategy.task_type} | {strategy.stack} | "
               f"{strategy.complexity} | team: {', '.join(strategy.agent_team)} "
@@ -109,8 +109,8 @@ class OrchestratorCore:
         if run_learnings:
             print(f"[Memory] {len(run_learnings)} success pattern(s) loaded.")
 
-        # Plan — enriched with strategy context
-        print("Thinking … Generating dependency-aware plan.")
+        # Plan - enriched with strategy context
+        print("Thinking ... Generating dependency-aware plan.")
         plan = self.brain.plan(
             user_goal=prompt,
             skill_context=skill_context,
@@ -154,22 +154,23 @@ class OrchestratorCore:
             pass  # never crash the main loop on learning failure
 
     def plan_only(self, prompt: str, agents_context: str = "") -> list[dict]:
-        """Return the plan without executing anything — for /plan slash command."""
+        """Return the plan without executing anything - for /plan slash command."""
         skill_context = select_skills(prompt)
         if agents_context:
             skill_context = agents_context + "\n\n" + skill_context
+        strategy = self.strategy_layer.analyze(prompt)
         critical_failures = self.memory.get_critical_failures()
         winning_fixes = self.memory.get_winning_fix_patterns()
+        run_learnings = self.memory.get_run_learnings()
         return self.brain.plan(
             user_goal=prompt,
             skill_context=skill_context,
             critical_failures=critical_failures,
             env_context=self.env_context,
             winning_fixes=winning_fixes,
+            run_learnings=run_learnings,
+            strategy_context=strategy.to_prompt_block(),
         )
-
-        print("\n[Orchestrator X] Session complete.")
-        self.memory.save()
 
     # ================================================================ dag
 
@@ -196,7 +197,7 @@ class OrchestratorCore:
             parallel_tasks = approved
 
         if parallel_tasks:
-            print(f"\n[Swarm] Running {len(parallel_tasks)} independent task(s) in parallel …")
+            print(f"\n[Swarm] Running {len(parallel_tasks)} independent task(s) in parallel ...")
             report = self.swarm.run_parallel(parallel_tasks)
 
             for task in parallel_tasks:
@@ -224,13 +225,13 @@ class OrchestratorCore:
 
             blocked = [d for d in deps if d in failed]
             if blocked:
-                print(f"\nSkipping '{task.get('description')}' — dependency failed: {blocked}")
+                print(f"\nSkipping '{task.get('description')}' - dependency failed: {blocked}")
                 failed.add(tid)
                 continue
 
             waiting = [d for d in deps if d not in completed]
             if waiting:
-                print(f"\nSkipping '{task.get('description')}' — unmet dependency: {waiting}")
+                print(f"\nSkipping '{task.get('description')}' - unmet dependency: {waiting}")
                 failed.add(tid)
                 continue
 
@@ -291,7 +292,7 @@ class OrchestratorCore:
                     self._on_success(working_task, result, last_fix_summary)
                     return True
 
-                # Verification failed — REFLECT + REPLAN
+                # Verification failed - REFLECT + REPLAN
                 print(f"[Verifier] Outcome check failed (confidence {verification.confidence:.0%}): "
                       f"{verification.reason[:200]}")
 
@@ -304,8 +305,8 @@ class OrchestratorCore:
                     error_excerpt=verification.reason,
                     previous_fix_summary=last_fix_summary,
                 )
-                print(f"[Reflect]  Root cause: {reflection.get('root_cause', '—')}")
-                print(f"[Reflect]  New approach: {reflection.get('different_approach', '—')}")
+                print(f"[Reflect]  Root cause: {reflection.get('root_cause', '-')}")
+                print(f"[Reflect]  New approach: {reflection.get('different_approach', '-')}")
 
                 replan = self.brain.replan(
                     original_task=working_task,
@@ -315,7 +316,7 @@ class OrchestratorCore:
                 )
                 if replan.get("payload"):
                     working_task = {**working_task, "payload": replan["payload"]}
-                    print(f"[Replan]   {replan.get('reason', '—')}")
+                    print(f"[Replan]   {replan.get('reason', '-')}")
 
                 self.memory.record_fix_pattern(
                     error_type="verification_failure",
@@ -328,7 +329,7 @@ class OrchestratorCore:
 
             # ── FIX AGENT: execution itself failed ───────────────────────
             failure_context = self._build_failure_context(working_task, result)
-            print("[Fix Agent] Analyzing failure …")
+            print("[Fix Agent] Analyzing failure ...")
             if failure_context.get("error_excerpt"):
                 print(f"  {failure_context['error_excerpt'][:300]}")
 
@@ -344,11 +345,11 @@ class OrchestratorCore:
 
             fingerprint = hashlib.sha256(str(fix_plan).encode()).hexdigest()
             if fingerprint in fix_history:
-                print("[Fix Agent] Same fix repeated — escalating.")
+                print("[Fix Agent] Same fix repeated - escalating.")
                 fix_plan = self._escalate_fix_strategy(working_task, result, failure_context)
                 fingerprint = hashlib.sha256(str(fix_plan).encode()).hexdigest()
 
-            print(f"Fix: {fix_plan.get('summary', '—')}")
+            print(f"Fix: {fix_plan.get('summary', '-')}")
             applied = self._apply_fix_plan(working_task, fix_plan)
             if not applied:
                 print("[Fix Agent] Could not apply fix plan.")
@@ -375,9 +376,9 @@ class OrchestratorCore:
     def _approve(self, task: dict) -> bool:
         """
         Return True if the task is allowed to run under the current approval_mode.
-        auto   – always True
-        suggest – ask for shell/deploy/git tools
-        manual  – ask for everything
+        auto   - always True
+        suggest - ask for shell/deploy/git tools
+        manual  - ask for everything
         """
         if self.approval_mode == "auto":
             return True
@@ -503,29 +504,40 @@ class OrchestratorCore:
             if new_cmd and task.get("tool") == "SystemOperator":
                 task["payload"] = {**task.get("payload", {}), "command": new_cmd}
                 return True
+            print(f"[Fix Agent] modify_command failed: no new_command or task is not SystemOperator")
             return False
 
         # ── file doesn't exist -> can't apply file-based fix ─────────────
-        if not target or not Path(target).exists():
+        if not target:
+            print("[Fix Agent] Fix plan missing target_file.")
+            return False
+        if not Path(target).exists():
+            print(f"[Fix Agent] Target file not found: {target}")
             return False
 
         if mode == "replace_text":
             old, new = fix_plan.get("old_text"), fix_plan.get("new_text")
             if not isinstance(old, str) or not isinstance(new, str):
+                print("[Fix Agent] replace_text missing old_text or new_text.")
                 return False
-            return self.executor.perform("FileEngine", {
+            result = self.executor.perform("FileEngine", {
                 "action": "edit", "path": target,
                 "old_str": old, "new_str": new,
-            }).success
+            })
+            if not result.success:
+                print(f"[Fix Agent] replace_text failed: {result.error}")
+            return result.success
 
         if mode == "rewrite_file":
             content = fix_plan.get("new_content")
             if not isinstance(content, str):
+                print("[Fix Agent] rewrite_file missing new_content.")
                 return False
             return self.executor.perform("FileEngine", {
                 "action": "write", "path": target, "content": content,
             }).success
 
+        print(f"[Fix Agent] Unknown fix mode: '{mode}'")
         return False
 
     def _escalate_fix_strategy(
