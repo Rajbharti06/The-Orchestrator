@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(python -m src.orchestrator.test_v2)",
+      "Bash(python -m src.orchestrator.test_v2 --deploy)",
+      "Bash(python3 -c \"import json; data=json.load\\(open\\('antigravity-awesome-skills/skills_index.json'\\)\\); print\\(type\\(data\\)\\); print\\(list\\(data.keys\\(\\)\\)[:5] if isinstance\\(data, dict\\) else data[:3]\\)\")",
+      "Bash(python -c \"import json; data=json.load\\(open\\('C:/Learnings/REAL PROJECTS/Claude/antigravity-awesome-skills/skills_index.json'\\)\\); print\\(type\\(data\\)\\); keys=list\\(data.keys\\(\\)\\) if isinstance\\(data, dict\\) else []; print\\(keys[:5]\\); print\\(list\\(data.values\\(\\)\\)[:1] if keys else data[:1]\\)\")",
+      "Bash(python:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(xargs grep:*)",
+      "Bash(rm:*)",
+      "Bash(rm -f hello.py hello_v2.py orchestrator_session.json orchestrator_history.json eval_report.json \"Builder with MCP.txt\" fib.py swarm_test_a.py swarm_test_b.py test_partition.py greeting.py)",
+      "Bash(ls *.py)",
+      "Bash(find \"C:\\\\Learnings\\\\REAL PROJECTS\\\\Claude\\\\src\" -name \"__pycache__\" -type d -exec rm -rf {} +)",
+      "Bash(ollama list:*)",
+      "Bash(ollama pull:*)",
+      "Bash(ollama run:*)",
+      "Bash(gh repo:*)",
+      "WebFetch(domain:opencode.ai)",
+      "WebFetch(domain:openclaw.ai)",
+      "Bash(gh api:*)",
+      "WebSearch",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:openai.com)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(netstat -ano)",
+      "Bash(curl -s http://127.0.0.1:8000/health)",
+      "Bash(curl -s http://127.0.0.1:8000/)",
+      "Bash(ls src/*.py src/tool_impls/)",
+      "Bash(rm -f src/jarvis.py src/simple_agent.py src/orchestrator/test_v2.py)",
+      "Bash(rm -rf src/tool_impls/)",
+      "Bash(curl -s http://127.0.0.1:9000/)",
+      "Bash(curl -s http://127.0.0.1:9000/health)",
+      "Bash(xargs -r -I{} taskkill /PID {} /F)",
+      "Bash(cp:*)",
+      "Bash(rm -f app.py auth.py auth_utils.py buggy_real.py fib.py fib_eval.py hello.py hello_eval.py main.py test_app.py test_auth.py test_main.py run_server.sh vercel.json summary.txt eval_report.json)",
+      "Bash(rm -f tests/test_porting_workspace.py)",
+      "Bash(rmdir tests:*)"
+    ]
+  }
+}
