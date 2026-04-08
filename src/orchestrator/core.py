@@ -33,6 +33,7 @@ from .execution.tools.WebSearchTool import WebSearchTool
 from .execution.validators import SyntaxValidator, verify_task
 from .agents.roles import RoleRouter
 from .swarm.manager import SwarmManager
+from .strategy import StrategyLayer
 
 
 class OrchestratorCore:
@@ -42,7 +43,7 @@ class OrchestratorCore:
         "claude" – Anthropic Claude  (ANTHROPIC_API_KEY env var)
         "groq"   – Groq fast inference (GROQ_API_KEY env var)
         "ollama" – local Ollama instance
-        "auto"   – Claude → Groq → Ollama → Mock fallback chain
+        "auto"   – Claude -> Groq -> Ollama -> Mock fallback chain
     """
 
     def __init__(self, provider_type: str = "mock", approval_mode: str = APPROVAL_MODE):
@@ -62,6 +63,7 @@ class OrchestratorCore:
         self.brain = LLMBrain(provider_type=provider_type)
         self.swarm = SwarmManager(self.executor, max_workers=SWARM_MAX_WORKERS)
         self.role_router = RoleRouter()
+        self.strategy_layer = StrategyLayer()
         self.max_retries = MAX_RETRIES
 
         # Capture environment once — injected into every LLM call
@@ -89,6 +91,13 @@ class OrchestratorCore:
             print(f"[Skills] {len(matched_skills)} skill(s) injected from catalog ({skill_count()} total): "
                   f"{', '.join(matched_skills) or 'built-in'}")
 
+        # Strategy analysis — classify goal BEFORE planning
+        strategy = self.strategy_layer.analyze(prompt)
+        print(f"[Strategy] {strategy.task_type} | {strategy.stack} | "
+              f"{strategy.complexity} | team: {', '.join(strategy.agent_team)} "
+              f"(confidence: {strategy.confidence:.0%})")
+        strategy_context = strategy.to_prompt_block()
+
         # Pull cross-session intelligence
         critical_failures = self.memory.get_critical_failures()
         winning_fixes = self.memory.get_winning_fix_patterns()
@@ -100,7 +109,7 @@ class OrchestratorCore:
         if run_learnings:
             print(f"[Memory] {len(run_learnings)} success pattern(s) loaded.")
 
-        # Plan
+        # Plan — enriched with strategy context
         print("Thinking … Generating dependency-aware plan.")
         plan = self.brain.plan(
             user_goal=prompt,
@@ -109,6 +118,7 @@ class OrchestratorCore:
             env_context=self.env_context,
             winning_fixes=winning_fixes,
             run_learnings=run_learnings,
+            strategy_context=strategy_context,
         )
 
         if not plan:
@@ -118,7 +128,7 @@ class OrchestratorCore:
         print(f"Plan: {len(plan)} task(s).\n")
         for i, t in enumerate(plan):
             deps = t.get("depends_on", [])
-            dep_str = f" → needs {deps}" if deps else ""
+            dep_str = f" -> needs {deps}" if deps else ""
             role = self.role_router.route(t.get("description", ""))
             print(f"  [{i+1}] [{role.name}] {t.get('description', '?')}{dep_str}")
         print()
@@ -495,7 +505,7 @@ class OrchestratorCore:
                 return True
             return False
 
-        # ── file doesn't exist → can't apply file-based fix ─────────────
+        # ── file doesn't exist -> can't apply file-based fix ─────────────
         if not target or not Path(target).exists():
             return False
 
@@ -526,7 +536,7 @@ class OrchestratorCore:
         if "pritn" in code and target:
             return {"mode": "replace_text", "target_file": target,
                     "old_text": "pritn", "new_text": "print",
-                    "summary": "Escalation: deterministic pritn→print fix.",
+                    "summary": "Escalation: deterministic pritn->print fix.",
                     "error_type": "NameError"}
         return {"mode": "rewrite_file", "target_file": target,
                 "new_content": code,

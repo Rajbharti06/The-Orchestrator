@@ -306,6 +306,7 @@ class LLMBrain:
         env_context: str = "",
         winning_fixes: list[dict] | None = None,
         run_learnings: list[dict] | None = None,
+        strategy_context: str = "",
     ) -> list[dict]:
         critical_ctx = ""
         if critical_failures:
@@ -353,6 +354,8 @@ class LLMBrain:
             f"{wins_ctx}"
             f"{learned_ctx}"
         )
+        if strategy_context:
+            system_prompt += "\n" + strategy_context + "\n"
         if env_context:
             system_prompt += "\nEnvironment:\n" + env_context + "\n"
         if skill_context:

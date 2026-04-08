@@ -136,7 +136,7 @@ Commands:
                 print(f"{len(plan)} task(s):")
                 for i, t in enumerate(plan):
                     deps = t.get("depends_on", [])
-                    dep_str = f" → needs {deps}" if deps else ""
+                    dep_str = f" -> needs {deps}" if deps else ""
                     print(f"  [{i+1}] [{t.get('tool','?')}] {t.get('description','?')}{dep_str}")
 
     elif name == "/model":

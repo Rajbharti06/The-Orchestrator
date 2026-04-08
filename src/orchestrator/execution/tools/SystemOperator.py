@@ -16,7 +16,7 @@ class SystemOperator:
     def _sanitize_command(command: str) -> str:
         """Fix common environment issues before executing."""
         import re
-        # CLI form: --host 0.0.0.0 → --host 127.0.0.1
+        # CLI form: --host 0.0.0.0 -> --host 127.0.0.1
         command = re.sub(r'--host\s+0\.0\.0\.0', '--host 127.0.0.1', command)
         # Python form: host="0.0.0.0" or host='0.0.0.0' inside uvicorn.run()/run()
         command = re.sub(r"""host\s*=\s*['"]0\.0\.0\.0['"]""", 'host="127.0.0.1"', command)

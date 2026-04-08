@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .env_probe import EnvironmentProbe
 
 
-# Common import name → PyPI package name mappings (import name ≠ pip name)
+# Common import name -> PyPI package name mappings (import name ≠ pip name)
 _IMPORT_TO_PIP: dict[str, str] = {
     "cv2": "opencv-python",
     "PIL": "Pillow",

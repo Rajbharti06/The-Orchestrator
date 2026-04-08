@@ -4,7 +4,7 @@ from __future__ import annotations
 Validators — Orchestrator X
 
 Pre-execution:  SyntaxValidator, ImportValidator
-Post-execution: VerificationEngine (THINK→ACT→VERIFY)
+Post-execution: VerificationEngine (THINK->ACT->VERIFY)
 
 VerificationEngine goes beyond exit-code checking to catch:
 - Files that execute cleanly but produce wrong output
