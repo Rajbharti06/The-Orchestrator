@@ -13,8 +13,14 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from src.orchestrator.core import OrchestratorCore
-from src.orchestrator.execution.skills import skill_count, list_skill_names
+try:
+    from orchestrator.core import OrchestratorCore
+    from orchestrator.execution.skills import skill_count, list_skill_names
+    from orchestrator.strategy import StrategyLayer
+except ImportError:
+    from src.orchestrator.core import OrchestratorCore
+    from src.orchestrator.execution.skills import skill_count, list_skill_names
+    from src.orchestrator.strategy import StrategyLayer
 
 
 class _EventStream(io.TextIOBase):
@@ -216,12 +222,14 @@ def index() -> str:
           <option value="mock">mock</option>
           <option value="auto">auto</option>
           <option value="claude">claude</option>
+          <option value="kimi">kimi</option>
           <option value="groq">groq</option>
           <option value="ollama">ollama</option>
         </select>
         <button id="start">Run</button>
       </div>
       <div id="skills-hint">Skills preview: type a prompt to see which skills will be injected.</div>
+      <div id="strategy-hint" style="font-size:.75rem;color:#a0c0e0;margin-bottom:4px;min-height:1.1em"></div>
       <div id="meta"></div>
       <div id="log"></div>
     </div>
@@ -237,6 +245,7 @@ def index() -> str:
     const logEl      = document.getElementById("log");
     const metaEl     = document.getElementById("meta");
     const skillsEl   = document.getElementById("skills-hint");
+    const strategyEl = document.getElementById("strategy-hint");
     let ws = null;
     let previewTimer = null;
 
@@ -248,18 +257,25 @@ def index() -> str:
       logEl.scrollTop = logEl.scrollHeight;
     }}
 
-    // Live skill preview as user types
+    // Live skill + strategy preview as user types
     promptEl.addEventListener("input", () => {{
       clearTimeout(previewTimer);
       const val = promptEl.value.trim();
-      if (!val) {{ skillsEl.textContent = "Skills preview: type a prompt to see which skills will be injected."; return; }}
+      if (!val) {{
+        skillsEl.textContent = "Skills preview: type a prompt to see which skills will be injected.";
+        strategyEl.textContent = "";
+        return;
+      }}
       previewTimer = setTimeout(async () => {{
         try {{
-          const r = await fetch(`/skills/preview?prompt=${{encodeURIComponent(val)}}`);
-          const d = await r.json();
-          skillsEl.textContent = d.count
-            ? `Skills that will be injected (${{d.count}}): ${{d.matched_skills.join(", ")}}`
-            : "No matching skills for this prompt (built-in fallback will be used).";
+          const [sr, str] = await Promise.all([
+            fetch(`/skills/preview?prompt=${{encodeURIComponent(val)}}`).then(r => r.json()),
+            fetch(`/strategy/preview?prompt=${{encodeURIComponent(val)}}`).then(r => r.json()),
+          ]);
+          skillsEl.textContent = sr.count
+            ? `Skills injected (${{sr.count}}): ${{sr.matched_skills.join(", ")}}`
+            : "No matching skills (built-in fallback).";
+          strategyEl.textContent = str.summary || "";
         }} catch (_) {{}}
       }}, 400);
     }});
@@ -353,6 +369,21 @@ def skills_preview(prompt: str = "build python api") -> dict[str, Any]:
     """Preview which skills would be injected for a given prompt."""
     names = list_skill_names(prompt)
     return {"prompt": prompt, "matched_skills": names, "count": len(names)}
+
+
+_strategy_layer = StrategyLayer()
+
+
+@app.get("/strategy/preview")
+def strategy_preview(prompt: str = "build a fastapi app") -> dict[str, Any]:
+    """Classify a prompt and return the strategy that will guide planning."""
+    result = _strategy_layer.analyze(prompt)
+    d = result.to_dict()
+    d["summary"] = (
+        f"Strategy: {result.task_type} | {result.stack} | {result.complexity} | "
+        f"team: {', '.join(result.agent_team)} | confidence: {result.confidence:.0%}"
+    )
+    return d
 
 
 @app.get("/runs")

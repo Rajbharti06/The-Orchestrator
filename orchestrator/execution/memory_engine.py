@@ -234,7 +234,7 @@ class MemoryEngine:
         dest.parent.mkdir(parents=True, exist_ok=True)
         with open(dest, "w", encoding="utf-8") as f:
             json.dump(self.data, f, indent=4)
-        print(f"[Memory] Session saved → {dest}")
+        print(f"[Memory] Session saved -> {dest}")
         self._append_to_history()
 
     # --------------------------------------------------------------- history

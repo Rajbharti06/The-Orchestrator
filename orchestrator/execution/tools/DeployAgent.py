@@ -6,10 +6,10 @@ launches it as a background process, waits for the port to open,
 and returns the live URL.
 
 Supported app types:
-  • FastAPI  → uvicorn <module>:app
-  • Flask    → flask --app <file> run
-  • Streamlit → streamlit run <file>
-  • Generic  → python <file>  (no URL check, just runs)
+  • FastAPI  -> uvicorn <module>:app
+  • Flask    -> flask --app <file> run
+  • Streamlit -> streamlit run <file>
+  • Generic  -> python <file>  (no URL check, just runs)
 
 The launched process is tracked so it can be reported (PID + URL).
 The caller is responsible for terminating the process when done.

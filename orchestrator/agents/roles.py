@@ -4,11 +4,11 @@ from __future__ import annotations
 Built-in agent roles — Orchestrator X
 
 Five specialized roles form an autonomous development team:
-  Architect  → plans structure and dependencies
-  Coder      → writes clean, working code
-  Tester     → validates correctness with tests
-  Fixer      → diagnoses and repairs failures
-  Deployer   → ships code to a running environment
+  Architect  -> plans structure and dependencies
+  Coder      -> writes clean, working code
+  Tester     -> validates correctness with tests
+  Fixer      -> diagnoses and repairs failures
+  Deployer   -> ships code to a running environment
 
 The RoleRouter assigns the best role to each task description.
 """
