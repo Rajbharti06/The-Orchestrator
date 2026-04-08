@@ -1,0 +1,7 @@
+{
+  "id": "fix_bug",
+  "description": "Fix a Python NameError and run the corrected file",
+  "prompt": "fix src/orchestrator/evals/fixtures/buggy.py which has a NameError typo (pritn instead of print) and run it",
+  "verify_command": "python src/orchestrator/evals/fixtures/buggy.py",
+  "timeout": 45
+}
