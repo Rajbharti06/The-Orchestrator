@@ -1,5 +1,5 @@
 """
-Real eval runner — uses an actual LLM provider (not mock).
+Real eval runner - uses an actual LLM provider (not mock).
 
 Usage:
     python -m src.orchestrator.evals.real                   # auto-detect provider
@@ -7,10 +7,10 @@ Usage:
     python -m src.orchestrator.evals.real claude --verbose  # verbose output
 
 Benchmark tasks (beyond the mock evals):
-    1. build_api      — write + deploy a FastAPI /health endpoint, verify HTTP 200
-    2. fix_bug        — fix a broken Python file, verify it runs
-    3. git_workflow   — run git status and log
-    4. web_research   — search for a topic, write summary to file
+    1. build_api      - write + deploy a FastAPI /health endpoint, verify HTTP 200
+    2. fix_bug        - fix a broken Python file, verify it runs
+    3. git_workflow   - run git status and log
+    4. web_research   - search for a topic, write summary to file
 """
 from __future__ import annotations
 

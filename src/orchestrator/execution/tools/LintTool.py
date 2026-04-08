@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-LintTool — Orchestrator X
+LintTool - Orchestrator X
 
 Runs flake8 (lint) and black (format) on Python files.
 Auto-installs either tool if missing.
@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from ..tool_registry import ExecutionResult
-from ....config import SYSTEM_OPERATOR_TIMEOUT
+from ...config import SYSTEM_OPERATOR_TIMEOUT
 
 
 class LintTool:

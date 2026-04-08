@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 """
-StrategyLayer — Orchestrator X
+StrategyLayer - Orchestrator X
 
 Runs BEFORE the planner. Classifies the goal into a strategy that tells the
 planner:
-  • What kind of task this is (web_api, cli, data, debug, research, generic)
-  • Which stack to use (FastAPI, Flask, Streamlit, plain Python, …)
-  • Complexity estimate (simple / medium / complex)
-  • Which agent roles are needed
-  • Concrete hints to inject into the plan (auth patterns, health endpoints, …)
+  * What kind of task this is (web_api, cli, data, debug, research, generic)
+  * Which stack to use (FastAPI, Flask, Streamlit, plain Python, ...)
+  * Complexity estimate (simple / medium / complex)
+  * Which agent roles are needed
+  * Concrete hints to inject into the plan (auth patterns, health endpoints, ...)
 
-100% rule-based — no extra LLM call, always fast, deterministic.
+100% rule-based - no extra LLM call, always fast, deterministic.
 The planner's system prompt is enriched with this strategy so the first
 attempt is already well-targeted.
 """
@@ -130,7 +130,7 @@ class StrategyResult:
         """Format as a concise block for LLM system prompts."""
         lines = [
             "STRATEGY ANALYSIS (pre-plan classification):",
-            f"  Task type  : {self.task_type} — {TASK_TYPES.get(self.task_type, '')}",
+            f"  Task type  : {self.task_type} - {TASK_TYPES.get(self.task_type, '')}",
             f"  Stack      : {STACKS.get(self.stack, self.stack)}",
             f"  Complexity : {self.complexity}",
             f"  Agent team : {', '.join(self.agent_team)}",
@@ -146,7 +146,7 @@ class StrategyResult:
         if self.hints:
             lines.append("  Planner hints:")
             for h in self.hints:
-                lines.append(f"    • {h}")
+                lines.append(f"    * {h}")
         return "\n".join(lines)
 
     def to_dict(self) -> dict:
@@ -271,7 +271,7 @@ class StrategyLayer:
         if needs_tests or complexity == "complex":
             team.append("Tester")
 
-        # Fixer is always on standby — not listed but always active
+        # Fixer is always on standby - not listed but always active
         if needs_deploy or task_type == "web_api":
             team.append("Deployer")
 
@@ -292,7 +292,7 @@ class StrategyLayer:
     ) -> list[str]:
         hints: list[str] = []
 
-        # Stack-specific (skip for debug/research — no new stack being built)
+        # Stack-specific (skip for debug/research - no new stack being built)
         if stack == "fastapi":
             hints.append("Use FastAPI with uvicorn. Bind to host='127.0.0.1' (not 0.0.0.0) on Windows.")
             if needs_health:
@@ -305,7 +305,7 @@ class StrategyLayer:
             hints.append("Use Streamlit. Entry point: streamlit run <file>.")
 
         elif stack == "plain" and task_type not in ("debug", "research", "generic"):
-            hints.append("Plain Python script — no web framework needed.")
+            hints.append("Plain Python script - no web framework needed.")
 
         # Auth
         if needs_auth:

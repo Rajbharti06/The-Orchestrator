@@ -1,5 +1,5 @@
 """
-Orchestrator X — entry point
+Orchestrator X - entry point
 
 Non-interactive (single shot):
     python -m src.orchestrator "build a FastAPI app and run it"
@@ -10,15 +10,15 @@ Interactive REPL (no args):
     python -m src.orchestrator
 
 Inside the REPL:
-    you> <any natural language goal>      — run a task
-    you> !<shell command>                 — run shell directly
-    you> /plan <goal>                     — show plan, don't execute
-    you> /model <provider>               — switch model mid-session
-    you> /status                          — show session info
-    you> /review                          — last session summary from memory
-    you> /approval auto|suggest|manual   — change approval mode
-    you> /help                            — show commands
-    you> /exit                            — quit
+    you> <any natural language goal>      - run a task
+    you> !<shell command>                 - run shell directly
+    you> /plan <goal>                     - show plan, don't execute
+    you> /model <provider>               - switch model mid-session
+    you> /status                          - show session info
+    you> /review                          - last session summary from memory
+    you> /approval auto|suggest|manual   - change approval mode
+    you> /help                            - show commands
+    you> /exit                            - quit
 """
 from __future__ import annotations
 
@@ -76,7 +76,7 @@ def _load_agents_md(cwd: Path | None = None) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Arg parsing (manual — no argparse to keep startup instant)
+# Arg parsing (manual - no argparse to keep startup instant)
 # ---------------------------------------------------------------------------
 
 def _parse_args(argv: list[str]) -> dict:
@@ -185,7 +185,7 @@ Memory  : {core.memory.session_path}
 _BANNER = """
 ╔══════════════════════════════════════════╗
 ║          Orchestrator X  REPL            ║
-║  /help for commands  •  /exit to quit    ║
+║  /help for commands  *  /exit to quit    ║
 ╚══════════════════════════════════════════╝"""
 
 

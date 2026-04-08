@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-MemoryEngine — Orchestrator X
+MemoryEngine - Orchestrator X
 
 Single-session:  records all actions, files, failures.
 Cross-session:   rolls up the last N sessions in ~/.orchestrator_x/history.json.
@@ -27,15 +27,16 @@ class MemoryEngine:
 
     def __init__(self, session_id: str):
         self.session_id = session_id
+        self.session_path: Path = DATA_DIR / SESSION_FILE
         self.data: dict = {
             "session_id": session_id,
             "start_time": datetime.now().isoformat(),
             "files_created": [],
             "actions_taken": [],
             "failures": [],
-            "successes": [],          # new: successful task records
-            "fix_patterns": [],       # new: what fixes actually worked
-            "deployed_apps": [],      # new: apps launched this session
+            "successes": [],
+            "fix_patterns": [],
+            "deployed_apps": [],
             "context": {},
         }
         self._history: list[dict] = self._load_history()

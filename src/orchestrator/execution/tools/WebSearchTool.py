@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-WebSearchTool — Orchestrator X
+WebSearchTool - Orchestrator X
 
 Gives the agent real-time research capability using the DuckDuckGo
 Instant Answer API (no API key required).
@@ -65,7 +65,7 @@ class WebSearchTool:
         if abstract:
             lines.append(f"Answer ({abstract_src}):\n{abstract}\n")
 
-        # Related topics — DDG returns two shapes:
+        # Related topics - DDG returns two shapes:
         #   Simple:  {"Text": "...", "FirstURL": "..."}
         #   Grouped: {"Name": "...", "Topics": [{...}, ...]}  ← wrapper, no Text
         topics = data.get("RelatedTopics", [])
@@ -86,7 +86,7 @@ class WebSearchTool:
                 text = (item.get("Text") or "").strip()
                 url_ref = (item.get("FirstURL") or "").strip()
                 if text:
-                    results.append(f"• {text}")
+                    results.append(f"* {text}")
                     if url_ref:
                         results.append(f"  {url_ref}")
             return results

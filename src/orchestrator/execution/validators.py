@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Validators — Orchestrator X
+Validators - Orchestrator X
 
 Pre-execution:  SyntaxValidator, ImportValidator
 Post-execution: VerificationEngine (THINK->ACT->VERIFY)
@@ -21,7 +21,7 @@ from pathlib import Path
 
 
 class SyntaxValidator:
-    """AST-based Python syntax checker – catches errors before execution."""
+    """AST-based Python syntax checker - catches errors before execution."""
 
     @staticmethod
     def validate(file_path: str) -> tuple[bool, str]:
@@ -57,7 +57,7 @@ class SyntaxValidator:
 
 class ImportValidator:
     """
-    Static import checker – flags missing standard-library or third-party modules
+    Static import checker - flags missing standard-library or third-party modules
     that the code tries to import, so the planner can add an install step.
     """
 
@@ -97,7 +97,7 @@ class ImportValidator:
 
 
 # ---------------------------------------------------------------------------
-# VerificationEngine — post-execution outcome checking
+# VerificationEngine - post-execution outcome checking
 # ---------------------------------------------------------------------------
 
 _ERROR_PATTERNS = re.compile(
@@ -115,7 +115,7 @@ _SUCCESS_NEUTRAL = re.compile(r"no issues|0 failed|passed|ok\b|done\b", re.IGNOR
 class VerificationResult:
     passed: bool
     reason: str
-    confidence: float  # 0.0 – 1.0
+    confidence: float  # 0.0 - 1.0
 
 
 class VerificationEngine:
@@ -219,7 +219,7 @@ class VerificationEngine:
         if not url:
             return VerificationResult(passed=False, reason="no URL returned by DeployAgent", confidence=0.8)
 
-        # Actually hit the endpoint — remove human from the loop
+        # Actually hit the endpoint - remove human from the loop
         verified_url, status = self._http_probe(url)
         if status and 200 <= status < 400:
             return VerificationResult(
@@ -230,12 +230,12 @@ class VerificationEngine:
         if status:
             return VerificationResult(
                 passed=False,
-                reason=f"HTTP {status} from {verified_url} — server running but unhealthy",
+                reason=f"HTTP {status} from {verified_url} - server running but unhealthy",
                 confidence=0.9,
             )
         return VerificationResult(
             passed=False,
-            reason=f"No response from {url} — server may not have started",
+            reason=f"No response from {url} - server may not have started",
             confidence=0.85,
         )
 
@@ -245,7 +245,7 @@ class VerificationEngine:
     ) -> tuple[str, int | None]:
         """
         Probe base_url then common health paths, with retries.
-        Waits before first attempt — uvicorn binds TCP before HTTP is ready.
+        Waits before first attempt - uvicorn binds TCP before HTTP is ready.
         Returns (probed_url, status_code) or (base_url, None) on failure.
         """
         import time
