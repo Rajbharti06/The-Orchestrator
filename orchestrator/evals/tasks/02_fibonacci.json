@@ -1,0 +1,7 @@
+{
+  "id": "fibonacci",
+  "description": "Create and run a Fibonacci function",
+  "prompt": "create fib_eval.py that defines a recursive fibonacci function and prints fib(10), then run it",
+  "verify_command": "python -c \"import subprocess; r=subprocess.run(['python','fib_eval.py'],capture_output=True,text=True); assert '55' in r.stdout, f'Expected 55, got: {r.stdout}'\"",
+  "timeout": 30
+}

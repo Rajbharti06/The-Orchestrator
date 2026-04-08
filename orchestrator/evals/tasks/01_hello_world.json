@@ -1,0 +1,7 @@
+{
+  "id": "hello_world",
+  "description": "Create and run a hello world Python script",
+  "prompt": "create hello_eval.py that prints hello world and run it",
+  "verify_command": "python hello_eval.py",
+  "timeout": 30
+}
