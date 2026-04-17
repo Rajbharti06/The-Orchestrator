@@ -1,54 +1,61 @@
-# Orchestrator X
+# The Orchestrator
 
-**An autonomous AI coding agent that plans, builds, tests, fixes, and deploys — by itself.**
+An autonomous AI software engineer. Give it a goal — it plans, builds, tests, self-corrects, and ships. No hand-holding.
 
 ---
 
 ## What it does
 
-Give it a goal. It figures out the rest.
-
-```bash
-python -m src.orchestrator "build a FastAPI CRUD API and run it"
+```
+"build a FastAPI login system with JWT auth and a React dashboard"
 ```
 
 The system will:
-1. Plan a dependency-aware task graph
-2. Inject relevant domain skills (889-skill catalog)
-3. Run independent tasks in parallel via the Swarm engine
-4. Execute sequential tasks with full retry + self-healing
-5. Auto-install missing dependencies
-6. Deploy and return a live URL
+
+1. **Plan** — detect stack from the prompt, break goal into phases
+2. **Architect** — design file structure, API contracts, and schemas before writing a single line
+3. **Build** — generate backend and frontend files in parallel
+4. **Validate** — check contracts, requirements, and stack compliance automatically
+5. **QA → Fix loop** — find issues and fix them, up to 5 attempts
+6. **Run** — start the app and verify it actually boots
+7. **API Test** — probe every endpoint and fix failures
+8. **Learn** — store what failed and what worked for the next run
+9. **Deploy** — push to GitHub and optionally ship to Vercel / Render / Fly.io
 
 ---
 
 ## Architecture
 
 ```
-src/orchestrator/
-├── core.py              — OrchestratorCore: the main loop
-├── execution/
-│   ├── llm_brain.py     — Multi-provider LLM (Claude / Groq / Ollama / Mock)
-│   ├── memory_engine.py — Cross-session learning with confidence scoring
-│   ├── skills.py        — 889-skill catalog injection
-│   ├── tool_registry.py — Tool protocol + registry
-│   ├── executor.py      — RuntimeExecutor
-│   ├── auto_installer.py— pip auto-install missing imports
-│   ├── env_probe.py     — Environment awareness
-│   ├── validators.py    — AST syntax pre-validation
-│   └── tools/
-│       ├── FileEngine.py     — read / write / edit files
-│       ├── SystemOperator.py — shell command execution
-│       ├── DeployAgent.py    — launch web apps, return URLs
-│       ├── GitTool.py        — git status/diff/log/add/commit
-│       └── WebSearchTool.py  — DuckDuckGo search (no API key)
-├── swarm/
-│   └── manager.py       — Parallel task execution engine
-├── evals/
-│   ├── evaluator.py     — Benchmark runner
-│   └── tasks/           — JSON benchmark task definitions
-└── api/
-    └── server.py        — FastAPI + WebSocket live dashboard
+orchestrator.js          — main pipeline coordinator
+agents/
+├── plannerAgent.js      — stack detection + task planning
+├── architectAgent.js    — system design before coding
+├── backendAgent.js      — generates Python/FastAPI files
+├── uiAgent.js           — generates React JSX files
+├── qaAgent.js           — audits generated code for issues
+├── fixAgent.js          — repairs issues found by QA or runtime
+├── runAgent.js          — starts the app, captures errors
+├── apiTesterAgent.js    — hits endpoints, validates responses
+├── githubAgent.js       — commits and pushes to GitHub
+├── hostingRouter.js     — routes to Vercel / Render / Fly.io
+└── webSearchAgent.js    — searches for solutions to runtime errors
+lib/
+├── llmRouter.js         — multi-provider LLM with automatic fallback
+├── strategyLayer.js     — multi-phase goal decomposition
+├── lessonStore.js       — persistent failure learning
+├── successLearner.js    — persistent success pattern learning
+├── evalEngine.js        — built-in self-scoring eval suite
+├── autonomousLoop.js    — self-improving loop (no human needed)
+├── selfHeal.js          — subsystem health monitoring + repair
+├── jobQueue.js          — async build queue
+├── memoryStore.js       — cross-run memory
+├── providerScoring.js   — ranks LLM providers by past performance
+└── apiServer.js         — REST API + SSE log streaming
+public/
+├── index.html           — web dashboard
+├── script.js            — real-time UI
+└── styles.css
 ```
 
 ---
@@ -56,56 +63,113 @@ src/orchestrator/
 ## Quickstart
 
 ```bash
-# Mock mode (no API key needed)
-python -m src.orchestrator "create hello.py that prints hello and run it"
+npm install
 
-# With Claude API key
-ANTHROPIC_API_KEY=sk-ant-... python -m src.orchestrator "build a FastAPI login endpoint"
+# Copy env template
+cp .env.example .env
+# Add at least one LLM key (GROQ_API_KEY is free and fast)
 
-# With Groq (fast, free tier)
-GROQ_API_KEY=gsk_... python -m src.orchestrator "write and run a fibonacci script"
+# Start the web dashboard
+npm run server
+# open http://localhost:5001
 
-# Live dashboard
-python -m uvicorn src.orchestrator.api.server:app --reload
-# then open http://localhost:8000
+# Or run from the command line
+node orchestrator.js "build a task manager API with FastAPI and PostgreSQL"
 ```
 
 ---
 
 ## LLM Providers
 
+Set at least one key in `.env`. The system auto-routes based on task type (planning vs. code vs. QA) and past provider performance.
+
 | Provider | Env Var | Notes |
 |----------|---------|-------|
-| `claude` | `ANTHROPIC_API_KEY` | Best reasoning |
-| `groq`   | `GROQ_API_KEY` | Fast, free tier |
-| `ollama` | *(none)* | Local, private |
-| `mock`   | *(none)* | Deterministic, no key needed |
-| `auto`   | *(auto-detect)* | Claude → Groq → Ollama → Mock |
+| Groq | `GROQ_API_KEY` | Fast, free tier |
+| xAI / Grok | `XAI_API_KEY` | Strong reasoning |
+| OpenAI | `OPENAI_API_KEY` | GPT-4o-mini default |
+| Anthropic | `ANTHROPIC_API_KEY` | Claude |
+| Mistral | `MISTRAL_API_KEY` | mistral-large |
+| OpenRouter | `OPENROUTER_API_KEY` | Access to many models |
+| Gemini | `GEMINI_API_KEY` | Flash 1.5 |
+| DeepSeek | `DEEPSEEK_API_KEY` | deepseek-coder |
+| Ollama | `OLLAMA_BASE_URL` | Local, no key needed |
 
 ---
 
-## Run Benchmarks
+## Autonomous Mode
 
-```bash
-python -m src.orchestrator.evals.evaluator mock
-```
-
----
-
-## Skills
-
-The agent draws from an 889-skill catalog at runtime, injecting domain-specific knowledge into every LLM call. Preview which skills activate for a given prompt:
+The system can improve itself without any input.
 
 ```bash
 # Via API
-GET /skills/preview?prompt=build+fastapi+app
+curl -X POST http://localhost:5001/autonomous/start
+
+# Or click "▶ Start Loop" in the dashboard
 ```
 
-Skill catalog: [antigravity-awesome-skills](https://github.com/rajbharti06/The-Orchestrator) (MIT License)
+Every cycle:
+1. Runs the built-in eval suite (4 test cases)
+2. Identifies weak areas
+3. Writes lessons to memory
+4. Sleeps, then repeats
+
+Each run is smarter than the last.
 
 ---
 
-## Disclaimer
+## API Endpoints
 
-This project is an **independent, original implementation** of an AI agent harness.  
-It is not affiliated with, endorsed by, or derived from Anthropic or any proprietary source.
+```
+POST /build              — start a build
+POST /cancel             — cancel running build
+GET  /status             — current build state
+GET  /history            — last 20 builds
+GET  /logs               — SSE log stream
+
+POST /queue              — queue a build job
+GET  /queue              — list all jobs
+GET  /queue/:id          — get one job
+
+POST /eval               — run eval suite
+GET  /eval               — eval history + trend + weak areas
+GET  /insights           — full intelligence report
+
+POST /autonomous/start   — start autonomous loop
+POST /autonomous/stop    — stop it
+GET  /autonomous/status  — loop state + score history
+POST /autonomous/run-cycle — trigger one cycle manually
+
+GET  /lessons            — failure lesson database
+GET  /successes          — success pattern database
+GET  /strategy           — current execution strategy
+GET  /providers          — active LLM providers
+GET  /health             — subsystem health
+```
+
+---
+
+## Mock Mode
+
+No LLM keys? Use mock mode for instant deterministic output.
+
+```bash
+MOCK=true node orchestrator.js "build login system"
+MOCK=true npm run server
+```
+
+---
+
+## Memory
+
+Everything the system learns is persisted in `memory/`:
+
+| File | Contents |
+|------|----------|
+| `lessons.json` | Failure patterns + prevention rules |
+| `successes.json` | Successful build patterns |
+| `eval_results.json` | Eval scores over time |
+| `memory.json` | Prompts, runs, issues, preferences |
+| `strategy.json` | Current execution strategy |
+| `autonomous_state.json` | Loop state + improvement history |
+| `heal_log.json` | Subsystem repair history |

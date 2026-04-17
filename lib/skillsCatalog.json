@@ -1,0 +1,165 @@
+{
+  "skills": [
+    {
+      "name": "@jwt-auth",
+      "tags": ["auth", "login", "jwt", "token", "session"],
+      "guidelines": [
+        "Issue access tokens (short TTL) and refresh tokens (long TTL) separately",
+        "Verify JWT on every protected route with a dependency injector",
+        "Return 401 on invalid/expired tokens, 403 on insufficient scope",
+        "Use RS256 or HS256 with a secret read from env, never hardcoded",
+        "Add /refresh and /logout endpoints"
+      ]
+    },
+    {
+      "name": "@secure-password",
+      "tags": ["auth", "password", "hash", "bcrypt", "passlib", "register"],
+      "guidelines": [
+        "Hash passwords with bcrypt (cost factor 12+) or passlib CryptContext",
+        "Never store or log plaintext passwords",
+        "Add time-bound reset tokens for forgot-password flow",
+        "Enforce minimum 8 chars, reject obvious passwords"
+      ]
+    },
+    {
+      "name": "@rate-limiting",
+      "tags": ["rate", "limit", "security", "throttle", "abuse"],
+      "guidelines": [
+        "Apply per-IP rate limits to /login and /register (e.g. 10 req/min)",
+        "Return HTTP 429 with Retry-After header on abuse",
+        "Log rate-limit events for monitoring",
+        "Consider slowloris and burst mitigation"
+      ]
+    },
+    {
+      "name": "@input-validation",
+      "tags": ["validation", "sanitize", "security", "injection"],
+      "guidelines": [
+        "Validate all user inputs with Pydantic models or Zod",
+        "Reject unexpected fields (use strict/forbid extra in Pydantic)",
+        "Sanitize string inputs to prevent XSS and SQLi",
+        "Return 422 with clear field-level error messages"
+      ]
+    },
+    {
+      "name": "@fastapi-best-practices",
+      "tags": ["fastapi", "python", "backend"],
+      "guidelines": [
+        "Structure: backend/app/main.py, backend/app/routes/*.py, backend/app/models/*.py",
+        "Use Pydantic BaseModel for request and response schemas",
+        "Enable CORS with explicit origins — avoid wildcard in production",
+        "Use lifespan context manager for startup/shutdown events",
+        "Mount routers with include_router and a versioned prefix like /api/v1"
+      ]
+    },
+    {
+      "name": "@django-best-practices",
+      "tags": ["django", "python", "backend"],
+      "guidelines": [
+        "Use Django REST Framework with serializers and ViewSets",
+        "Configure INSTALLED_APPS and REST_FRAMEWORK settings in settings.py",
+        "Use Django's auth system or JWT via djangorestframework-simplejwt",
+        "Store secrets in environment variables via python-decouple or django-environ"
+      ]
+    },
+    {
+      "name": "@express-best-practices",
+      "tags": ["express", "node", "nodejs", "backend"],
+      "guidelines": [
+        "Structure: src/app.js, src/routes/*.js, src/middleware/*.js, src/models/*.js",
+        "Use express-validator for input validation",
+        "Apply helmet.js for security headers and cors() for CORS",
+        "Handle async errors with express-async-errors or a global error handler"
+      ]
+    },
+    {
+      "name": "@postgres-best-practices",
+      "tags": ["postgres", "database", "sql", "postgresql"],
+      "guidelines": [
+        "Use SQLAlchemy (Python) or Knex/Prisma (Node) with connection pooling",
+        "Store DATABASE_URL in environment, never hardcode credentials",
+        "Add indexes on frequently queried columns (user_id, email, created_at)",
+        "Use database migrations — Alembic for Python, Knex/Prisma migrate for Node"
+      ]
+    },
+    {
+      "name": "@mongodb-best-practices",
+      "tags": ["mongo", "mongodb", "nosql", "database"],
+      "guidelines": [
+        "Use Mongoose (Node) or Motor (Python async) with schema validation",
+        "Define indexes for query performance",
+        "Store MONGODB_URI in environment",
+        "Use transactions for multi-document writes when atomicity matters"
+      ]
+    },
+    {
+      "name": "@migrations",
+      "tags": ["migration", "schema", "alembic", "prisma"],
+      "guidelines": [
+        "Create a migrations/ directory with versioned scripts",
+        "Initial migration should create users table and core schemas",
+        "Add README instructions for running migrations"
+      ]
+    },
+    {
+      "name": "@react-forms",
+      "tags": ["react", "form", "frontend", "ui", "input"],
+      "guidelines": [
+        "Use controlled inputs with useState hooks",
+        "Show inline validation errors per field",
+        "Disable submit button during async calls to prevent double-submit",
+        "Use React Context or a state management library for auth state"
+      ]
+    },
+    {
+      "name": "@react-api-client",
+      "tags": ["react", "fetch", "axios", "api", "frontend"],
+      "guidelines": [
+        "Centralize API calls in a services/ or api/ directory",
+        "Use Axios interceptors or a custom fetch wrapper for auth headers",
+        "Handle loading, error, and success states for every request",
+        "Refresh JWT token automatically on 401 before retrying"
+      ]
+    },
+    {
+      "name": "@tailwind-setup",
+      "tags": ["tailwind", "css", "frontend", "styling"],
+      "guidelines": [
+        "Import Tailwind via CDN for quick start or configure tailwind.config.js",
+        "Use responsive utility classes (sm: md: lg:) for all layout",
+        "Ensure dark/light mode compatibility with dark: variants",
+        "Use consistent spacing scale (p-4, m-2 etc.) throughout"
+      ]
+    },
+    {
+      "name": "@websocket-realtime",
+      "tags": ["websocket", "realtime", "chat", "socket", "ws"],
+      "guidelines": [
+        "Use FastAPI WebSocket or Socket.io for real-time events",
+        "Authenticate WS connections on upgrade (token in query param or first message)",
+        "Handle disconnect/reconnect gracefully with exponential backoff",
+        "Broadcast messages via a shared connection manager"
+      ]
+    },
+    {
+      "name": "@error-handling",
+      "tags": ["error", "exception", "handler", "middleware"],
+      "guidelines": [
+        "Return consistent error shape: { error: string, detail?: any }",
+        "Never leak stack traces or internal paths to clients",
+        "Log errors server-side with context (user id, route, timestamp)",
+        "Use custom exception classes for domain errors"
+      ]
+    },
+    {
+      "name": "@environment-config",
+      "tags": ["env", "config", "dotenv", "secret"],
+      "guidelines": [
+        "Load all secrets from environment variables — never commit .env files",
+        "Fail fast with a clear error message if required env vars are missing",
+        "Document all required vars in .env.example",
+        "Use different defaults for dev vs production"
+      ]
+    }
+  ]
+}

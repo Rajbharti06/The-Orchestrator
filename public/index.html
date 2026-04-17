@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Orchestrator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">The Orchestrator</span>
+    </div>
+    <div class="header-right">
+      <span id="status-badge" class="badge badge-idle">IDLE</span>
+      <span id="providers-label" class="providers-label">no providers</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left: Build input -->
+    <section class="panel panel-left">
+      <h2 class="panel-title">Build</h2>
+      <div class="form-group">
+        <label>Prompt</label>
+        <textarea id="prompt" rows="5" placeholder="Build a fintech app with authentication, transactions, and a React dashboard..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>LLM Provider</label>
+          <select id="llm">
+            <option value="auto">Auto (best available)</option>
+            <option value="xai">xAI / Grok</option>
+            <option value="groq">Groq</option>
+            <option value="openai">OpenAI</option>
+            <option value="mistral">Mistral</option>
+            <option value="claude">Claude (Anthropic)</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="ollama">Ollama (local)</option>
+            <option value="gemini">Gemini</option>
+            <option value="deepseek">DeepSeek</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Hosting</label>
+          <select id="hosting">
+            <option value="auto">Auto</option>
+            <option value="vercel">Vercel</option>
+            <option value="railway">Railway</option>
+            <option value="render">Render</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Stack Override <span class="hint">(optional, e.g. "FastAPI+React+PostgreSQL")</span></label>
+        <input id="stack" type="text" placeholder="auto-detected from prompt" />
+      </div>
+      <div class="button-row">
+        <button id="btn-build" class="btn btn-primary">Run Build</button>
+        <button id="btn-cancel" class="btn btn-danger" disabled>Cancel</button>
+      </div>
+      <div id="progress-bar-wrap" class="progress-bar-wrap hidden">
+        <div id="progress-bar" class="progress-bar" style="width:0%"></div>
+        <span id="progress-label" class="progress-label">0%</span>
+      </div>
+
+      <!-- Autonomous Intelligence Controls -->
+      <div class="auto-section">
+        <h3 class="sub-title">🤖 Autonomous Mode</h3>
+        <p class="auto-desc">Self-improving loop: runs eval, finds weaknesses, writes lessons, repeats.</p>
+        <div class="button-row">
+          <button id="btn-auto-start" class="btn btn-primary">▶ Start Loop</button>
+          <button id="btn-auto-stop"  class="btn btn-danger"  disabled>⏹ Stop</button>
+          <button id="btn-run-eval"   class="btn btn-ghost">🧪 Run Eval</button>
+        </div>
+        <div id="auto-status" class="auto-status">
+          <span id="auto-badge" class="badge badge-idle">IDLE</span>
+          <span id="auto-score" class="auto-score">—</span>
+          <span id="auto-trend" class="auto-trend"></span>
+        </div>
+        <div id="auto-weak-areas" class="auto-weak-areas"></div>
+      </div>
+    </section>
+
+    <!-- Center: Pipeline stages -->
+    <section class="panel panel-center">
+      <h2 class="panel-title">Pipeline</h2>
+      <div class="pipeline">
+        <div class="stage" id="stage-planning" data-phase="planning">
+          <div class="stage-icon">📋</div>
+          <div class="stage-name">Plan</div>
+          <div class="stage-dot"></div>
+        </div>
+        <div class="stage-arrow">→</div>
+        <div class="stage" id="stage-architect" data-phase="architect">
+          <div class="stage-icon">📐</div>
+          <div class="stage-name">Architect</div>
+          <div class="stage-dot"></div>
+        </div>
+        <div class="stage-arrow">→</div>
+        <div class="stage" id="stage-backend" data-phase="backend">
+          <div class="stage-icon">⚙️</div>
+          <div class="stage-name">Backend</div>
+          <div class="stage-dot"></div>
+        </div>
+        <div class="stage-arrow">→</div>
+        <div class="stage" id="stage-ui" data-phase="ui">
+          <div class="stage-icon">🎨</div>
+          <div class="stage-name">UI</div>
+          <div class="stage-dot"></div>
+        </div>
+        <div class="stage-arrow">→</div>
+        <div class="stage" id="stage-qa" data-phase="qa">
+          <div class="stage-icon">🧪</div>
+          <div class="stage-name">QA</div>
+          <div class="stage-dot"></div>
+        </div>
+        <div class="stage-arrow">→</div>
+        <div class="stage" id="stage-fix" data-phase="fix">
+          <div class="stage-icon">🔧</div>
+          <div class="stage-name">Fix</div>
+          <div class="stage-dot"></div>
+        </div>
+        <div class="stage-arrow">→</div>
+        <div class="stage" id="stage-test" data-phase="test">
+          <div class="stage-icon">📡</div>
+          <div class="stage-name">API Test</div>
+          <div class="stage-dot"></div>
+        </div>
+        <div class="stage-arrow">→</div>
+        <div class="stage" id="stage-deploy" data-phase="deploy">
+          <div class="stage-icon">🚀</div>
+          <div class="stage-name">Deploy</div>
+          <div class="stage-dot"></div>
+        </div>
+      </div>
+
+      <!-- ReAct thought/action/observation timeline -->
+      <div class="react-wrap">
+        <h3 class="sub-title">Agent Reasoning <span class="hint">(ReAct Loop)</span></h3>
+        <div id="react-timeline" class="react-timeline"></div>
+      </div>
+
+      <div class="generated-files-wrap">
+        <h3 class="sub-title">Generated Files <span id="files-count" class="badge badge-neutral">0</span></h3>
+        <ul id="files-list" class="files-list"></ul>
+      </div>
+
+      <div class="history-wrap">
+        <h3 class="sub-title">Build History</h3>
+        <ul id="history-list" class="history-list"></ul>
+      </div>
+    </section>
+
+    <!-- Right: Live logs + Queue -->
+    <section class="panel panel-right">
+      <div class="log-header">
+        <h2 class="panel-title">Logs</h2>
+        <button id="btn-clear-logs" class="btn btn-ghost">Clear</button>
+      </div>
+      <div id="log-output" class="log-output"></div>
+
+      <div class="queue-wrap">
+        <div class="queue-header">
+          <h3 class="sub-title">Job Queue</h3>
+          <button id="btn-refresh-queue" class="btn btn-ghost btn-sm">Refresh</button>
+        </div>
+        <div id="queue-stats" class="queue-stats"></div>
+        <ul id="queue-list" class="queue-list"></ul>
+      </div>
+
+      <!-- Insights panel -->
+      <div class="insights-wrap">
+        <div class="queue-header">
+          <h3 class="sub-title">Insights</h3>
+          <button id="btn-refresh-insights" class="btn btn-ghost btn-sm">Refresh</button>
+        </div>
+        <div id="insights-body" class="insights-body">
+          <div class="insight-row"><span class="insight-label">Eval score</span><span id="ins-score">—</span></div>
+          <div class="insight-row"><span class="insight-label">Trend</span><span id="ins-trend">—</span></div>
+          <div class="insight-row"><span class="insight-label">Lessons</span><span id="ins-lessons">—</span></div>
+          <div class="insight-row"><span class="insight-label">Successes</span><span id="ins-successes">—</span></div>
+          <div id="ins-weak-areas" class="ins-weak-areas"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
