@@ -29,6 +29,13 @@ import { verifierLoop } from './lib/goalLoop.js';
 import { selectEngine } from './lib/multiEngine.js';
 import reportStore from './lib/reportStore.js';
 import taskBoard from './lib/taskBoard.js';
+import { ragQuery } from './lib/ragEngine.js';
+import { agentFederation } from './lib/agentFederation.js';
+import { assembleTeam, coordinateSwarms } from './lib/swarmCoordinator.js';
+import { parseSpec } from './lib/specParser.js';
+import { recordEpisode, learnSemantic, getMemoryContext } from './lib/continuityMemory.js';
+import { autofixCILoop } from './lib/ciLoop.js';
+import { antiSycophancyScore, consensusGate } from './lib/antiSycophancy.js';
 
 export const orchestratorEvents = new EventEmitter();
 
@@ -74,6 +81,15 @@ async function runBuildPipeline(job) {
   const sharedContext = {};
 
   try {
+    // ── RAG: Inject relevant memory context ───────────────────────────
+    try {
+      const ragCtx = await ragQuery(prompt, { topK: 5, namespace: 'all' });
+      if (ragCtx.confidence > 0.5) {
+        sharedContext.ragContext = ragCtx.context;
+        log(jobId, 'memory', `RAG: ${ragCtx.sources.length} relevant memories (confidence: ${ragCtx.confidence.toFixed(2)})`, 'info');
+      }
+    } catch { /* non-critical */ }
+
     // ── Phase 0: Strategy ──────────────────────────────────────────────
     log(jobId, 'strategy', `Engine: ${engine.name || 'claude'} | Analyzing goal complexity...`);
     const strategy = await strategyLayer.decomposeGoal(prompt);
@@ -93,6 +109,13 @@ async function runBuildPipeline(job) {
       .map(([k, v]) => `${k}:${v}`)
       .join(' ');
     log(jobId, 'plan', `Stack: ${stackStr}`, 'success');
+
+    // Assemble swarm based on complexity
+    try {
+      const swarmTeam = await assembleTeam({ complexity: strategy.complexity, plan });
+      sharedContext.swarmTeam = swarmTeam;
+      log(jobId, 'swarm', `Team: ${swarmTeam.swarms.join(', ')} (${swarmTeam.agents.length} agents)`, 'info');
+    } catch { /* non-critical */ }
 
     buildState.get(jobId).phase = 'architecture';
     buildState.get(jobId).progress = 15;
@@ -249,6 +272,19 @@ async function runBuildPipeline(job) {
       plan,
     });
 
+    // Record episodic memory for future RAG retrieval
+    try {
+      await recordEpisode(jobId, {
+        phase: 'complete',
+        outcome,
+        keyFacts: [`stack: ${stackStr}`, `qa: ${qaReport.score}/100`, `files: ${Object.keys(sharedContext.files).length}`],
+        duration: Date.now() - startTime,
+      });
+      if (outcome === 'success') {
+        await learnSemantic(`${plan.stack?.backend}+${plan.stack?.frontend}`, 0.85);
+      }
+    } catch { /* non-critical */ }
+
     const result = {
       success: true,
       outcome,
@@ -334,6 +370,18 @@ export function startBuild(prompt, options = {}) {
   return jobQueue.enqueue(prompt, options, options.priority || 0);
 }
 
+/**
+ * Start a build from any spec format (PRD, OpenAPI, GitHub issue, one-liner).
+ * @param {string} specInput - Raw spec content
+ * @param {Object} [options]
+ * @returns {Object} Job object with id
+ */
+export async function startBuildFromSpec(specInput, options = {}) {
+  const spec = await parseSpec(specInput);
+  const prompt = spec.description || spec.title || specInput;
+  return jobQueue.enqueue(prompt, { ...options, spec, suggestedStack: spec.suggestedStack }, options.priority || 0);
+}
+
 // ── Startup ──────────────────────────────────────────────────────────────────
 
 // Register pipeline runner
@@ -371,4 +419,4 @@ if (process.env.SKIP_SERVER !== 'true') {
 }
 
 export { webSearchAgentModule as webSearchAgent };
-export default { startBuild, cancelBuild, getBuildState, orchestratorEvents };
+export default { startBuild, startBuildFromSpec, cancelBuild, getBuildState, orchestratorEvents };

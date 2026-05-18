@@ -33,6 +33,15 @@ lib/
   multiEngine.js       ← Multi-CLI engine abstraction (Claude/Codex/Gemini/OpenCode)
   reportStore.js       ← Version-organized build reports
   taskBoard.js         ← Task board with backlog/in_progress/done states
+  rarvLoop.js          ← RARV autonomous cycle (Reason→Act→Reflect→Verify)
+  agentFederation.js   ← Named agent communication (pipeline/fan-out/supervisor)
+  ragEngine.js         ← 4-step RAG pipeline (RETRIEVE→JUDGE→DISTILL→CONSOLIDATE)
+  worktreeManager.js   ← Git worktree isolation per parallel agent
+  ciLoop.js            ← CI monitoring + autonomous repair loop
+  specParser.js        ← Spec intake: PRD/OpenAPI/GitHub issue/one-liner → BuildSpec
+  continuityMemory.js  ← 3-layer memory: episodic + semantic + procedural
+  swarmCoordinator.js  ← 8-swarm assembly, Raft consensus, inter-swarm coordination
+  antiSycophancy.js    ← Blind review, 2/3 consensus, mutation detection
 agents/
   plannerAgent.js      ← Detects stack, creates phases
   architectAgent.js    ← Designs file structure + API contracts
@@ -54,8 +63,11 @@ agents/
   validator.md         ← Code quality gate: types + tests + contracts (sonnet)
   tester.md            ← UX quality gate: E2E + screenshots + perf (sonnet)
   scribe.md            ← Documentation: CHANGELOG + VERSION + README (haiku)
-skills/                ← 20 SKILL.md definitions (ECC + OpenClaw + GodMode patterns)
-commands/              ← 12 slash command definitions
+  ci-agent.md          ← CI/CD monitoring + auto-fix agent (haiku)
+  spec-analyst.md      ← Spec intake + normalization agent (sonnet)
+  swarm-coordinator.md ← Meta-coordination + swarm assembly agent (sonnet)
+skills/                ← 24 SKILL.md definitions (ECC + OpenClaw + GodMode + Loki + Ruflo patterns)
+commands/              ← 16 slash command definitions
 rules/
   common/security.md   ← OWASP security rules (always follow)
   common/testing.md    ← 80%+ coverage + TDD rules
@@ -70,7 +82,7 @@ memory/                ← Persisted lessons, instincts, history, dreams
 reports/               ← Version-organized build reports (reports/v2.1.4/)
 ```
 
-## Core Principles (from ECC + GodMode + OpenClaw)
+## Core Principles (from ECC + GodMode + OpenClaw + Loki + Ruflo)
 
 - **Agent-First** — Delegate specialized work to domain agents (researcher, architect, guardian, builder, validator, tester, scribe)
 - **Test-Driven** — 80%+ coverage; tests written before implementation
@@ -81,6 +93,14 @@ reports/               ← Version-organized build reports (reports/v2.1.4/)
 - **Dream Cycles** — Background memory consolidation every 2h using haiku-class model
 - **Multi-Engine** — Claude, Codex, Gemini, OpenCode as swappable engines per task type
 - **Goal Loops** — Verifier and completion loops for truly autonomous execution
+- **RARV Cycles** — Reason→Act→Reflect→Verify: no-question autonomous execution
+- **Agent Federation** — Named agents with 3 topologies: Pipeline, Fan-out/Fan-in, Supervisor/Worker
+- **Swarm Intelligence** — 8 specialized swarms with Raft consensus for critical decisions
+- **Anti-Sycophancy** — Blind 3-reviewer system, 2/3 consensus, mutation detection
+- **RAG Memory** — 4-step pipeline: RETRIEVE→JUDGE→DISTILL→CONSOLIDATE across 6 namespaces
+- **Spec-to-Product** — Any input format (PRD/OpenAPI/issue/brief) → deployed product
+- **Worktree Isolation** — Each parallel agent gets an isolated git worktree + branch
+- **CI-Fix Loop** — CI failures injected back to agents for autonomous repair (max 3x)
 
 ## Security Baseline
 
@@ -116,6 +136,12 @@ Load any skill in Claude Code by typing `/orchestrator:<skillname>`:
 | `/orchestrator:autonomous-loops` | Self-improvement configuration |
 | `/orchestrator:continuous-learning-v2` | Instinct-based learning |
 | `/orchestrator:search-first` | Research-before-code pattern |
+| `/orchestrator:rarv-cycles` | RARV autonomous execution (Reason→Act→Reflect→Verify) |
+| `/orchestrator:agent-federation` | Named agent communication with 3 coordination topologies |
+| `/orchestrator:swarm-intelligence` | 8-swarm architecture with Raft consensus |
+| `/orchestrator:anti-sycophancy` | Blind review, 2/3 consensus, mutation detection |
+| `/orchestrator:rag-memory` | 4-step RAG pipeline over all memory namespaces |
+| `/orchestrator:spec-to-product` | Any spec format → deployed product |
 
 ## Available Commands
 
@@ -134,12 +160,9 @@ Load any skill in Claude Code by typing `/orchestrator:<skillname>`:
 | `/learn` | Teach a lesson manually |
 | `/skill-create` | Create a new SKILL.md |
 | `/instinct-status` | View learned instincts |
-| `/security-scan` | Run security scanner |
-| `/eval` | Run self-scoring eval suite |
-| `/autonomous` | Toggle autonomous self-improvement |
-| `/learn` | Manually teach a lesson |
-| `/instinct-status` | View learned instincts |
-| `/quality-gate` | Run quality verification |
+| `/spec` | Drop any spec format → deployed product |
+| `/swarm` | Launch specialized agent swarm |
+| `/ci-fix` | Monitor CI and autonomously fix failures |
 
 ## API Endpoints
 
@@ -190,6 +213,25 @@ Load any skill in Claude Code by typing `/orchestrator:<skillname>`:
 - `GET /health` - System health
 - `GET /strategy` - Decompose a goal (no code generation)
 - `WS /ws` - WebSocket for real-time updates
+
+### Spec-to-Product
+- `POST /spec` - Parse + build from any spec: `{ spec, dryRun?, deploy? }`
+
+### Swarms
+- `POST /swarm` - Launch swarm: `{ swarms, task, mode? }`
+- `GET /swarm/status` - Active swarm status
+
+### Worktrees
+- `GET /worktrees` - List active git worktrees
+- `DELETE /worktrees/:agent` - Remove agent worktree
+
+### CI-Fix
+- `POST /ci-fix` - Autonomous CI repair: `{ files, plan, ciResult, maxAttempts? }`
+
+### RAG Memory
+- `POST /rag` - Query RAG memory: `{ query, topK?, namespace? }`
+- `GET /memory/episodes` - Episodic memory entries
+- `GET /memory/semantic` - Semantic patterns (optional: `?domain=`)
 
 ## Autonomous Loop
 

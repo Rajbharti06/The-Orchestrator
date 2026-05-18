@@ -1,15 +1,17 @@
 # Orchestrator X
 
-**The most powerful autonomous multi-agent AI software engineering system.**
+**The most powerful autonomous multi-agent AI software engineering system ever built.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org)
-[![Agents](https://img.shields.io/badge/Agents-42-purple.svg)](#agents)
-[![Skills](https://img.shields.io/badge/Skills-18-orange.svg)](#skills)
+[![Agents](https://img.shields.io/badge/Agents-45-purple.svg)](#agents)
+[![Skills](https://img.shields.io/badge/Skills-24-orange.svg)](#skills)
 [![Multi-Engine](https://img.shields.io/badge/Engines-4-red.svg)](#multi-engine-support)
 [![Providers](https://img.shields.io/badge/LLM_Providers-9-yellow.svg)](#llm-providers)
+[![Swarms](https://img.shields.io/badge/Swarms-8-blue.svg)](#swarm-intelligence)
+[![Lib Modules](https://img.shields.io/badge/Lib_Modules-31-cyan.svg)](#architecture)
 
-> Give it a goal in plain English. It plans, designs, builds, tests, secures, and deploys a full-stack application — then learns from every run to get better.
+> Give it a goal in plain English — or drop a spec file, OpenAPI YAML, or GitHub issue. It plans, designs, builds, tests, secures, and deploys a full-stack application. Then learns from every run, runs blind consensus reviews, and gets better autonomously.
 
 ---
 
@@ -41,12 +43,14 @@ Result: running, tested, documented, deployed application
 
 ## Core Statistics
 
-- **42 specialized agents** — pipeline agents + GodMode review council
-- **18 SKILL.md workflow definitions** — loadable knowledge collections
-- **13 slash commands** — `/build`, `/tdd`, `/e2e`, `/code-review`, `/security-scan`, and more
-- **22 lib modules** — goal loops, dream cycles, multi-engine, task board, eval harness
+- **45 specialized agents** — pipeline agents + GodMode council + swarm coordinators + CI + spec analyst
+- **24 SKILL.md workflow definitions** — RARV, federation, swarms, anti-sycophancy, RAG, spec-to-product + 18 more
+- **16 slash commands** — `/build`, `/spec`, `/swarm`, `/ci-fix`, `/tdd`, `/e2e`, and more
+- **31 lib modules** — RAG engine, swarm coordinator, agent federation, RARV loop, CI-fix, worktrees, 3-layer memory + more
 - **9 LLM providers** — Anthropic, OpenAI, Groq, Gemini, Mistral, DeepSeek, xAI, OpenRouter, Ollama
 - **4 CLI engines** — Claude Code, Codex, Gemini CLI, OpenCode (swappable)
+- **8 specialized swarms** — engineering, operations, business, data, product, growth, review, orchestration
+- **11 quality gates** — security, imports, API contracts, mutation safety, backward compat, blind consensus + more
 - **6 rule sets** — security, testing, commits, TypeScript, Python, Go (always-follow)
 
 ---
@@ -170,26 +174,32 @@ Release:       scribe → github-manager
 
 Load any skill by typing `/orchestrator:<name>` in Claude Code:
 
-| Skill | Purpose |
-|-------|---------|
-| `godmode` | 8-agent orchestration with dual quality gates |
-| `build-pipeline` | Full 8-phase autonomous build workflow |
-| `tdd-workflow` | Red-green-refactor with 80% coverage enforcement |
-| `security-review` | OWASP Top 10 full audit |
-| `api-design` | RESTful contract-first design patterns |
-| `backend-patterns` | Express / FastAPI / Django / Gin production patterns |
-| `frontend-patterns` | React / Vue / Next.js / Svelte component patterns |
-| `database-migrations` | Zero-downtime migration patterns |
-| `deployment-patterns` | Railway / Vercel / Render / Fly.io + Docker |
-| `goal-loops` | Verifier loops + completion loops for autonomous agents |
-| `multi-engine` | Swap Claude/Codex/Gemini/OpenCode per task |
-| `dream-memory` | Background memory consolidation (2hr cycles) |
-| `verification-loop` | QA loop with web-search fallback |
-| `strategic-compact` | Goal decomposition + dependency graph |
-| `eval-harness` | 8-case self-scoring eval suite |
-| `autonomous-loops` | Self-improvement configuration |
-| `continuous-learning-v2` | Instinct-based learning system |
-| `search-first` | Research-before-code pattern |
+| Skill | Source | Purpose |
+|-------|--------|---------|
+| `godmode` | GodMode v5 | 8-agent orchestration with dual quality gates |
+| `build-pipeline` | ECC | Full 8-phase autonomous build workflow |
+| `tdd-workflow` | ECC | Red-green-refactor with 80% coverage enforcement |
+| `security-review` | ECC | OWASP Top 10 full audit |
+| `api-design` | ECC | RESTful contract-first design patterns |
+| `backend-patterns` | ECC | Express / FastAPI / Django / Gin production patterns |
+| `frontend-patterns` | ECC | React / Vue / Next.js / Svelte component patterns |
+| `database-migrations` | ECC | Zero-downtime migration patterns |
+| `deployment-patterns` | ECC | Railway / Vercel / Render / Fly.io + Docker |
+| `goal-loops` | ECC | Verifier loops + completion loops for autonomous agents |
+| `multi-engine` | ECC | Swap Claude/Codex/Gemini/OpenCode per task |
+| `dream-memory` | ECC | Background memory consolidation (2hr cycles) |
+| `verification-loop` | ECC | QA loop with web-search fallback |
+| `strategic-compact` | ECC | Goal decomposition + dependency graph |
+| `eval-harness` | ECC | 8-case self-scoring eval suite |
+| `autonomous-loops` | ECC | Self-improvement configuration |
+| `continuous-learning-v2` | ECC | Instinct-based learning system |
+| `search-first` | ECC | Research-before-code pattern |
+| `rarv-cycles` | Loki Mode | RARV autonomous execution (Reason→Act→Reflect→Verify) |
+| `agent-federation` | Ruflo/Claude Flow v3 | Named agents with Pipeline / Fan-out / Supervisor topologies |
+| `swarm-intelligence` | Loki Mode | 8-swarm architecture with Raft consensus |
+| `anti-sycophancy` | Loki Mode | Blind 3-reviewer system, 2/3 consensus, mutation detection |
+| `rag-memory` | Ruflo | 4-step RAG pipeline over 6 memory namespaces |
+| `spec-to-product` | Loki Mode | Any spec format (PRD/OpenAPI/issue/brief) → deployed product |
 
 ---
 
@@ -204,12 +214,15 @@ Load any skill by typing `/orchestrator:<name>` in Claude Code:
 | `/code-review` | Full review: correctness, perf, security |
 | `/build-fix` | Auto-fix build errors (loops up to 5×) |
 | `/security-scan` | OWASP Top 10 scan |
-| `/quality-gate` | All 6 quality checks with pass/fail |
+| `/quality-gate` | All 11 quality gates with pass/fail |
 | `/eval` | Run self-scoring eval suite |
 | `/autonomous` | Toggle 10-minute improvement loop |
 | `/learn` | Manually teach a lesson |
 | `/skill-create` | Generate a new SKILL.md |
 | `/instinct-status` | View learned instincts + confidence |
+| `/spec` | Drop any spec → deployed product (PRD/OpenAPI/issue/brief) |
+| `/swarm` | Launch a specialized agent swarm with consensus |
+| `/ci-fix` | Monitor CI pipeline + autonomously fix failures |
 
 ---
 
@@ -269,6 +282,112 @@ Background consolidation runs every **2 hours** using a haiku-class model:
 # Manual trigger
 curl -X POST http://localhost:3000/dreams/run
 ```
+
+---
+
+## Swarm Intelligence
+
+8 specialized agent swarms with automatic assembly and Raft consensus for critical decisions.
+
+| Swarm | Agents | Triggers |
+|-------|--------|---------|
+| `engineering` | backend, frontend, architect, planner | Any build |
+| `operations` | deploy, ci-agent, run-agent | Deployments |
+| `business` | spec-analyst, researcher | New specs |
+| `data` | database-reviewer, data-modeler | Schema changes |
+| `product` | tester, ux-reviewer | UI changes |
+| `growth` | scribe, doc-writer | Documentation |
+| `review` | validator, security-reviewer, code-reviewer, api-guardian | All builds |
+| `orchestration` | planner, goal-loop-controller | Complex/autonomous |
+
+**Auto-assembly:** `low complexity → engineering + review` · `high complexity → all 8 swarms`
+
+```bash
+/swarm review "Audit the payment processing module for PCI compliance"
+/swarm engineering "Refactor auth module to refresh tokens"
+```
+
+---
+
+## Anti-Sycophancy
+
+The most insidious failure mode: agents that agree with each other even when wrong.
+
+**Blind Review Protocol** — 3 independent reviewers see code with zero knowledge of other reviews:
+
+```
+reviewer 1 ─┐
+reviewer 2  ├─→ consensus gate (2/3 required) → APPROVED / BLOCKED
+reviewer 3 ─┘
+```
+
+**11 Quality Gates:**
+
+| Gate | Blocks? |
+|------|---------|
+| Security scan (OWASP) | YES |
+| Import validation | YES |
+| API contract compliance | YES |
+| Error handling | YES |
+| Env var documentation | Warn |
+| Complexity | Warn |
+| Mutation safety | YES |
+| Backward compatibility | YES |
+| Documentation coverage | Warn |
+| Anti-sycophancy score | Warn |
+| Blind review consensus | YES |
+
+**Anti-sycophancy score:** 0.0 (pure sycophancy) → 1.0 (genuinely diverse reviews). Score < 0.3 triggers a re-run warning.
+
+---
+
+## RAG Memory
+
+4-step pipeline surfaces the most relevant lessons at build time — no vector database required:
+
+```
+RETRIEVE  → TF-IDF scoring across all memory namespaces (<5ms)
+    ↓
+JUDGE     → LLM scores each candidate's relevance 0-1 (~500ms)
+    ↓
+DISTILL   → Extract the core insight from top results (~300ms)
+    ↓
+CONSOLIDATE → EWC merge: preserve if new confidence < 0.7 (<10ms)
+```
+
+**6 Memory Namespaces:** `lessons` · `instincts` · `builds` · `skills` · `episodic` · `semantic`
+
+RAG context is automatically injected into every agent prompt when confidence > 0.5.
+
+---
+
+## Spec-to-Product
+
+Drop any spec format and get a deployed product:
+
+```bash
+/spec ./requirements.md            # PRD markdown
+/spec ./api.yaml                   # OpenAPI YAML
+/spec https://github.com/org/repo/issues/42   # GitHub issue
+/spec "Build a Slack clone with channels and DMs"  # One-liner
+```
+
+All formats normalize to the same `BuildSpec` → feeds the full 8-phase pipeline.
+
+---
+
+## RARV Cycles
+
+Truly autonomous execution — no questions asked:
+
+```
+REASON  → Analyze goal, surface constraints, pick approach
+ACT     → Execute with full tool access
+REFLECT → Score result: did it satisfy the goal?
+VERIFY  → If not, loop. If yes, commit and move to next phase.
+```
+
+Human intervention signals: write `.loki/PAUSE` (pause), `.loki/STOP` (stop), `.loki/HUMAN_INPUT.md` (inject guidance).
 
 ---
 

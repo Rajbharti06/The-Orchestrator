@@ -146,6 +146,8 @@
         <div class="tab" onclick="showTab('auto-tab')">Autonomous</div>
         <div class="tab" onclick="showTab('godmode-tab')">GodMode</div>
         <div class="tab" onclick="showTab('dreams-tab')">Dreams</div>
+        <div class="tab" onclick="showTab('swarm-tab')">Swarms</div>
+        <div class="tab" onclick="showTab('spec-tab')">Spec</div>
       </div>
       <div class="tab-content active" id="eval-tab">
         <div class="intel-block">
@@ -253,7 +255,65 @@
             <div>Click "View Journal" to load entries.</div>
           </div>
         </div>
+        <!-- Swarms Tab -->
+      <div class="tab-content" id="swarm-tab">
+        <div class="intel-block">
+          <h4>Launch Swarm</h4>
+          <div style="color:var(--muted);font-size:11px;line-height:1.6;margin-bottom:8px;">
+            Deploy specialized agent swarms. Anti-sycophancy: blind reviews with 2/3 consensus.
+          </div>
+          <select id="swarm-select" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:4px;font-family:inherit;font-size:12px;margin-bottom:8px;">
+            <option value="review">review — quality gates</option>
+            <option value="engineering">engineering — code generation</option>
+            <option value="operations">operations — DevOps + CI/CD</option>
+            <option value="data">data — DB design</option>
+            <option value="product">product — UX + E2E</option>
+            <option value="growth">growth — docs + onboarding</option>
+            <option value="business">business — requirements</option>
+            <option value="orchestration">orchestration — meta-coordination</option>
+          </select>
+          <textarea id="swarm-task" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:inherit;font-size:12px;resize:vertical;min-height:60px;" placeholder="Task for the swarm..."></textarea>
+          <div class="btn-row" style="margin-top:8px;">
+            <button class="btn-primary btn-sm" onclick="launchSwarm()">🐝 Launch Swarm</button>
+            <button class="btn-ghost btn-sm" onclick="loadSwarmStatus()">📊 Status</button>
+          </div>
+        </div>
+        <div class="intel-block">
+          <h4>Swarm Status</h4>
+          <div id="swarm-status" style="font-size:11px;color:var(--muted);">Click Status to refresh.</div>
+        </div>
+        <div class="intel-block">
+          <h4>Last Result</h4>
+          <div id="swarm-result" style="font-size:11px;color:var(--muted);max-height:200px;overflow-y:auto;"></div>
+        </div>
       </div>
+
+      <!-- Spec Tab -->
+      <div class="tab-content" id="spec-tab">
+        <div class="intel-block">
+          <h4>Spec-to-Product</h4>
+          <div style="color:var(--muted);font-size:11px;line-height:1.6;margin-bottom:8px;">
+            Drop any spec — PRD markdown, OpenAPI YAML, GitHub issue, or one-liner — and get a deployed product.
+          </div>
+          <select id="spec-format" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:4px;font-family:inherit;font-size:12px;margin-bottom:8px;">
+            <option value="auto">Auto-detect format</option>
+            <option value="prd">PRD markdown</option>
+            <option value="openapi">OpenAPI YAML</option>
+            <option value="issue">GitHub Issue</option>
+            <option value="brief">One-liner brief</option>
+          </select>
+          <textarea id="spec-input" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:inherit;font-size:12px;resize:vertical;min-height:100px;" placeholder="Paste your spec here (PRD, OpenAPI YAML, GitHub issue text, or a one-liner)..."></textarea>
+          <div class="btn-row" style="margin-top:8px;">
+            <button class="btn-primary btn-sm" onclick="submitSpec()">🚀 Build from Spec</button>
+            <button class="btn-ghost btn-sm" onclick="parseSpecOnly()">🔍 Dry Run (parse only)</button>
+          </div>
+        </div>
+        <div class="intel-block">
+          <h4>Parsed BuildSpec</h4>
+          <div id="spec-result" style="font-size:11px;color:var(--muted);max-height:250px;overflow-y:auto;font-family:monospace;"></div>
+        </div>
+      </div>
+    </div>
     </div>
 
     <!-- Log Panel -->
@@ -591,6 +651,81 @@
         const reports = await fetch(`/reports/${version}`).then(r => r.json());
         alert(`Reports for v${version}:\n` + Object.keys(reports).join(', '));
       } catch {}
+    }
+
+    // ── Swarms ────────────────────────────────────────────────────────────
+    async function launchSwarm() {
+      const swarm = document.getElementById('swarm-select').value;
+      const task = document.getElementById('swarm-task').value.trim();
+      if (!task) { alert('Enter a task for the swarm'); return; }
+      document.getElementById('swarm-result').innerHTML = '<span style="color:var(--yellow)">Launching swarm...</span>';
+      try {
+        const result = await fetch('/swarm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ swarms: [swarm], task }),
+        }).then(r => r.json());
+        document.getElementById('swarm-result').innerHTML =
+          `<div style="color:var(--green)">Decision: ${result.decision || 'completed'}</div>` +
+          `<div style="color:var(--muted)">Agreement: ${result.agreement ? (result.agreement * 100).toFixed(0) + '%' : 'n/a'}</div>` +
+          `<pre style="margin-top:8px;font-size:10px;white-space:pre-wrap;">${escHtml(JSON.stringify(result, null, 2).slice(0, 1000))}</pre>`;
+      } catch (err) {
+        document.getElementById('swarm-result').innerHTML = `<span style="color:var(--red)">Error: ${escHtml(err.message)}</span>`;
+      }
+    }
+    async function loadSwarmStatus() {
+      try {
+        const status = await fetch('/swarm/status').then(r => r.json());
+        const el = document.getElementById('swarm-status');
+        el.innerHTML = Object.entries(status).map(([name, s]) =>
+          `<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span style="color:var(--blue)">${name}</span>
+            <span style="color:var(--muted)"> active:${s.active || 0} done:${s.completed || 0}</span>
+          </div>`
+        ).join('') || '<div>No active swarms</div>';
+      } catch { document.getElementById('swarm-status').textContent = 'Unavailable'; }
+    }
+
+    // ── Spec-to-Product ────────────────────────────────────────────────────
+    async function submitSpec() {
+      const spec = document.getElementById('spec-input').value.trim();
+      if (!spec) { alert('Paste a spec first'); return; }
+      document.getElementById('spec-result').innerHTML = '<span style="color:var(--yellow)">Parsing and building...</span>';
+      try {
+        const result = await fetch('/spec', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ spec, deploy: false }),
+        }).then(r => r.json());
+        if (result.jobId) {
+          currentJobId = result.jobId;
+          showProgress(true);
+          document.getElementById('cancel-btn').style.display = 'inline-block';
+        }
+        document.getElementById('spec-result').innerHTML =
+          `<div style="color:var(--green)">Job: ${result.jobId}</div>` +
+          `<pre style="margin-top:8px;font-size:10px;white-space:pre-wrap;">${escHtml(JSON.stringify(result.buildSpec, null, 2))}</pre>`;
+      } catch (err) {
+        document.getElementById('spec-result').innerHTML = `<span style="color:var(--red)">${escHtml(err.message)}</span>`;
+      }
+    }
+    async function parseSpecOnly() {
+      const spec = document.getElementById('spec-input').value.trim();
+      if (!spec) { alert('Paste a spec first'); return; }
+      document.getElementById('spec-result').innerHTML = '<span style="color:var(--yellow)">Parsing...</span>';
+      try {
+        const result = await fetch('/spec', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ spec, dryRun: true }),
+        }).then(r => r.json());
+        document.getElementById('spec-result').innerHTML =
+          `<div style="color:var(--blue)">Format: ${result.type}</div>` +
+          `<div style="color:var(--muted)">Complexity: ${result.estimatedComplexity}</div>` +
+          `<pre style="margin-top:8px;font-size:10px;white-space:pre-wrap;">${escHtml(JSON.stringify(result, null, 2))}</pre>`;
+      } catch (err) {
+        document.getElementById('spec-result').innerHTML = `<span style="color:var(--red)">${escHtml(err.message)}</span>`;
+      }
     }
 
     // ── Init ──────────────────────────────────────────────────────────────
