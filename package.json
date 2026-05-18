@@ -1,0 +1,36 @@
+{
+  "name": "orchestrator-x",
+  "version": "2.0.0",
+  "description": "Autonomous multi-agent AI software engineering system with self-improvement",
+  "main": "orchestrator.js",
+  "bin": { "orchestrator": "./cli.js" },
+  "scripts": {
+    "start": "node orchestrator.js",
+    "start:mock": "node -e \"process.env.MOCK='true';\" orchestrator.js",
+    "dev": "node orchestrator.js",
+    "proxy": "node cli.js proxy",
+    "eval": "node cli.js eval",
+    "eval:mock": "node cli.js eval --mock",
+    "status": "node cli.js status",
+    "test": "node --input-type=module --eval \"import('./lib/evalEngine.js').then(({evalEngine}) => evalEngine.runEvalSuite()).then(r => { console.log('Score:', r.score, '| Passed:', r.passedCount+'/'+r.totalCount); process.exit(r.score >= 60 ? 0 : 1); })\"",
+    "test:mock": "node --input-type=module --eval \"process.env.MOCK='true'; const {evalEngine} = await import('./lib/evalEngine.js'); const r = await evalEngine.runEvalSuite(); console.log('Mock eval OK — infrastructure works (score:', r.score + ')'); process.exit(0);\""
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2",
+    "open": "^9.1.0",
+    "ws": "^8.14.2",
+    "uuid": "^9.0.0",
+    "commander": "^11.1.0",
+    "chalk": "^5.3.0",
+    "ora": "^7.0.1",
+    "p-limit": "^5.0.0",
+    "p-queue": "^8.0.1",
+    "better-sqlite3": "^9.4.3",
+    "zod": "^3.22.4"
+  },
+  "type": "module",
+  "engines": { "node": ">=18.0.0" }
+}

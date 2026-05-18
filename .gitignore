@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment — NEVER commit secrets
+.env
+.env.local
+.env.*.local
+
+# Memory / persistence (keep structure, not data)
+memory/*.json
+memory/*.db
+memory/*.db-journal
+memory/*.db-shm
+memory/*.db-wal
+memory/dreams.jsonl
+!memory/.gitkeep
+
+# Build reports (version-organized, generated at runtime)
+reports/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+out/
+
+# Screenshots and docs with screenshots
+docs/screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# Generated app output from orchestrator builds
+generated/
+output/
+
+# Editor / OS
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Thumbs.db:encryptable
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Claude session files (personal)
+.claude/
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3

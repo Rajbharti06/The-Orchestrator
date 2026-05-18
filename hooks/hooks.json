@@ -1,0 +1,46 @@
+{
+  "hooks": [
+    {
+      "event": "PostToolUse",
+      "matcher": "tool == \"Write\" || tool == \"Edit\"",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node scripts/hooks/post-edit.js",
+          "timeout": 10000
+        }
+      ]
+    },
+    {
+      "event": "Stop",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node scripts/hooks/session-end.js",
+          "timeout": 15000
+        }
+      ]
+    },
+    {
+      "event": "SessionStart",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node scripts/hooks/session-start.js",
+          "timeout": 10000
+        }
+      ]
+    },
+    {
+      "event": "PreToolUse",
+      "matcher": "tool == \"Bash\"",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node scripts/hooks/pre-bash.js",
+          "timeout": 5000
+        }
+      ]
+    }
+  ]
+}
