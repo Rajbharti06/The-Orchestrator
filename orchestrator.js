@@ -35,7 +35,9 @@ import { assembleTeam, coordinateSwarms } from './lib/swarmCoordinator.js';
 import { parseSpec } from './lib/specParser.js';
 import { recordEpisode, learnSemantic, getMemoryContext } from './lib/continuityMemory.js';
 import { autofixCILoop } from './lib/ciLoop.js';
-import { antiSycophancyScore, consensusGate } from './lib/antiSycophancy.js';
+import { antiSycophancyScore, consensusGate, fullReview } from './lib/antiSycophancy.js';
+import { verifyPipeline, verifyOutput } from './lib/prmVerifier.js';
+import { runCouncil } from './lib/councilMode.js';
 
 export const orchestratorEvents = new EventEmitter();
 
@@ -121,13 +123,30 @@ async function runBuildPipeline(job) {
     buildState.get(jobId).progress = 15;
     checkCancelled();
 
-    // ── Phase 2: Architecture ─────────────────────────────────────────
+    // ── Phase 2: Architecture (+ Council validation for complex builds) ──
     log(jobId, 'arch', 'Designing file structure, API contracts, DB schema...');
     const architecture = await runArchitect(prompt, plan, sharedContext);
     sharedContext.architecture = architecture;
     const endpointCount = (architecture.endpoints || []).length;
     const fileCount = Object.keys(architecture.fileStructure || {}).length;
     log(jobId, 'arch', `${fileCount} files, ${endpointCount} endpoints designed`, 'success');
+
+    // Council validation for HIGH complexity builds only (avoid overhead on simple builds)
+    if (strategy.complexity === 'high' || strategy.complexity === 'very-high') {
+      try {
+        const councilResult = await runCouncil({
+          question: `Validate this architecture for: "${prompt}"\nStack: ${stackStr}\nEndpoints: ${endpointCount}\nFiles: ${fileCount}`,
+          experts: 3,
+          fast: false,
+        });
+        if (councilResult.synthesis.requiresHumanReview) {
+          log(jobId, 'council', `⚠ Architecture review flagged: ${councilResult.synthesis.recommendation?.slice(0, 80)}`, 'warn');
+        } else {
+          log(jobId, 'council', `Architecture validated (confidence: ${(councilResult.synthesis.confidence * 100).toFixed(0)}%, diversity: ${(councilResult.diversity * 100).toFixed(0)}%)`, 'success');
+        }
+        sharedContext.councilResult = councilResult;
+      } catch { /* council is advisory */ }
+    }
 
     buildState.get(jobId).phase = 'generating';
     buildState.get(jobId).progress = 25;
@@ -148,10 +167,28 @@ async function runBuildPipeline(job) {
     buildState.get(jobId).progress = 55;
     checkCancelled();
 
-    // ── Phase 5: QA (with fix loop) ───────────────────────────────────
+    // ── Phase 5: QA (PRM step-verification + fix loop) ────────────────────
     let qaReport;
     let fixAttempts = 0;
     const MAX_FIX_ATTEMPTS = 3;
+
+    // PRM step-wise verification before entering QA loop
+    try {
+      const prmResult = await verifyPipeline({
+        goal: prompt,
+        steps: [
+          { step: 'Planning', output: JSON.stringify(plan).slice(0, 800) },
+          { step: 'Architecture', output: JSON.stringify(architecture).slice(0, 800) },
+          { step: 'Code generation', output: `${Object.keys(sharedContext.files || {}).length} files generated` },
+        ],
+        threshold: 0.5,
+      });
+      if (!prmResult.passed) {
+        log(jobId, 'prm', `Step verification failed at step ${(prmResult.firstFail?.step ?? 0) + 1}: ${prmResult.firstFail?.reasoning?.slice(0, 80)}`, 'warn');
+      } else {
+        log(jobId, 'prm', `Pipeline steps verified (avg score: ${(prmResult.avgScore * 100).toFixed(0)}%)`, 'success');
+      }
+    } catch { /* PRM is advisory */ }
 
     while (fixAttempts <= MAX_FIX_ATTEMPTS) {
       log(jobId, 'qa', `QA audit (attempt ${fixAttempts + 1})...`);

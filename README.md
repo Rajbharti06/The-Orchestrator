@@ -3,13 +3,15 @@
 **The most powerful autonomous multi-agent AI software engineering system ever built.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Providers](https://img.shields.io/badge/Providers-6%20Elite-gold.svg)](#llm-providers)
+[![Primary Coding](https://img.shields.io/badge/Primary%20Coding-MiniMax%20M2.5%20%E2%80%94%2080.2%25%20SWE--Bench-brightgreen.svg)](https://featherless.ai)
+[![Reasoning](https://img.shields.io/badge/Reasoning-DeepSeek%20R1%20%E2%80%94%2090%25%20AIME-blue.svg)](https://deepseek.com)
+[![Memory](https://img.shields.io/badge/Memory-GSW%20%2B%20ProcMEM%20%2B%20Episodic-purple.svg)](#memory-architecture)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org)
 [![Agents](https://img.shields.io/badge/Agents-45-purple.svg)](#agents)
 [![Skills](https://img.shields.io/badge/Skills-24-orange.svg)](#skills)
 [![Multi-Engine](https://img.shields.io/badge/Engines-4-red.svg)](#multi-engine-support)
-[![Providers](https://img.shields.io/badge/LLM_Providers-9-yellow.svg)](#llm-providers)
 [![Swarms](https://img.shields.io/badge/Swarms-8-blue.svg)](#swarm-intelligence)
-[![Lib Modules](https://img.shields.io/badge/Lib_Modules-31-cyan.svg)](#architecture)
 
 > Give it a goal in plain English — or drop a spec file, OpenAPI YAML, or GitHub issue. It plans, designs, builds, tests, secures, and deploys a full-stack application. Then learns from every run, runs blind consensus reviews, and gets better autonomously.
 
@@ -417,26 +419,37 @@ Automatic fallback chain: `claude → gemini → codex → opencode`
 
 ## LLM Providers
 
-Automatic multi-provider routing with fallback:
+Six elite providers, selected by 2026 benchmark performance. Removed: xAI (grok-beta — not specialized for code), Mistral (outperformed by DeepSeek), OpenRouter (redundant meta-layer).
 
-| Provider | Task Strengths |
-|----------|---------------|
-| Anthropic (Claude) | Planning, architecture, security, reasoning |
-| OpenAI (GPT-4o) | General coding, fast iteration |
-| Groq | Ultra-fast inference (llama models) |
-| Google Gemini | Long context, multimodal |
-| Mistral | European data residency |
-| DeepSeek | Cost-efficient coding |
-| xAI (Grok) | Real-time knowledge |
-| OpenRouter | Provider aggregator |
-| Ollama | Local, privacy-first |
+Smart routing by task type — best-benchmark-first with automatic fallback:
+
+| Provider | Primary Models | Task Routing | Why |
+|----------|---------------|--------------|-----|
+| **Featherless** | MiniMax-M2.5, Qwen3-235B, DeepSeek-R1, Kimi-K2 | **coding** (primary) | MiniMax-M2.5: 80.2% SWE-Bench — #1 open-source coding (2026) |
+| **Anthropic** | Opus 4.7, Sonnet 4.6, Haiku 4.5 | planning, security, reasoning | Best tool-calling stability + long-horizon recovery |
+| **DeepSeek** | R1 (reasoner), V3 (chat) | **reasoning** (primary) | R1: 90% AIME — best open-source reasoning |
+| **Gemini** | 2.5 Pro, 2.5 Flash | **longcontext** (primary) | 2M token context — full codebase analysis |
+| **Groq** | Llama 3.3 70B, tool-use | **fast**, qa | Sub-200ms inference — ideal for rapid iteration |
+| **Ollama** | Qwen2.5, Qwen2.5-Coder, DeepSeek-R1 | offline/private | Zero cost, full control, air-gapped environments |
+
+**Routing intelligence:**
+```
+coding      → featherless (MiniMax-M2.5)  → anthropic → deepseek → groq
+planning    → anthropic (Opus 4.7)         → featherless → gemini → deepseek
+reasoning   → deepseek (R1)                → featherless → anthropic → gemini
+security    → anthropic                    → featherless → deepseek → gemini
+longcontext → gemini (2.5 Pro, 2M ctx)    → featherless → anthropic
+fast/qa     → groq (sub-200ms)            → featherless → anthropic
+```
 
 Configure in `.env`:
 ```
 ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...
+FEATHERLESS_API_KEY=sk-...        # Free tier at featherless.ai
 GROQ_API_KEY=gsk_...
-GEMINI_API_KEY=...
+DEEPSEEK_API_KEY=sk-...
+GEMINI_API_KEY=AIza...
+OLLAMA_BASE_URL=http://localhost:11434
 ```
 
 ---
@@ -564,6 +577,10 @@ lib/
   selfHeal.js          ← Subsystem health monitoring
   apiServer.js         ← REST API + SSE + WebSocket server
   aiProxy.js           ← OpenAI-compatible proxy (port 3002)
+  prmVerifier.js       ← Process Reward Model — step-wise pipeline verification (NEW)
+  councilMode.js       ← 3-phase council consensus: Triage→Debate→Synthesis (NEW)
+  ragEngine.js         ← GSW RAG: TF-IDF + Semantic Workspace (20% better than vector RAG)
+  antiSycophancy.js    ← Multi-provider blind review + adversarial red-team debate (UPGRADED)
 agents/                ← 11 JS pipeline agents + 9 MD review agents
 skills/                ← 18 SKILL.md workflow definitions
 commands/              ← 13 slash command definitions
