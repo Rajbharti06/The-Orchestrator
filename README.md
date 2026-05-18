@@ -7,6 +7,7 @@
 [![Primary Coding](https://img.shields.io/badge/Primary%20Coding-MiniMax%20M2.5%20%E2%80%94%2080.2%25%20SWE--Bench-brightgreen.svg)](https://featherless.ai)
 [![Reasoning](https://img.shields.io/badge/Reasoning-DeepSeek%20R1%20%E2%80%94%2090%25%20AIME-blue.svg)](https://deepseek.com)
 [![Memory](https://img.shields.io/badge/Memory-GSW%20%2B%20ProcMEM%20%2B%20Episodic-purple.svg)](#memory-architecture)
+[![Intelligence](https://img.shields.io/badge/Intelligence-Palantir%20%2B%20DARPA%20%2B%20AGoT-red.svg)](#palantir-grade-intelligence)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org)
 [![Agents](https://img.shields.io/badge/Agents-45-purple.svg)](#agents)
 [![Skills](https://img.shields.io/badge/Skills-24-orange.svg)](#skills)
@@ -47,13 +48,14 @@ Result: running, tested, documented, deployed application
 
 - **45 specialized agents** — pipeline agents + GodMode council + swarm coordinators + CI + spec analyst
 - **24 SKILL.md workflow definitions** — RARV, federation, swarms, anti-sycophancy, RAG, spec-to-product + 18 more
-- **16 slash commands** — `/build`, `/spec`, `/swarm`, `/ci-fix`, `/tdd`, `/e2e`, and more
-- **31 lib modules** — RAG engine, swarm coordinator, agent federation, RARV loop, CI-fix, worktrees, 3-layer memory + more
-- **9 LLM providers** — Anthropic, OpenAI, Groq, Gemini, Mistral, DeepSeek, xAI, OpenRouter, Ollama
+- **17 slash commands** — `/build`, `/spec`, `/swarm`, `/think`, `/ci-fix`, `/tdd`, `/e2e`, and more
+- **36 lib modules** — RAG engine, swarm coordinator, agent federation, RARV loop, CI-fix, 3-layer memory, **5 new intelligence engines** + more
+- **6 LLM providers** — Featherless, Anthropic, Groq, Gemini, DeepSeek, Ollama (elite-only after v4.0 cleanup)
 - **4 CLI engines** — Claude Code, Codex, Gemini CLI, OpenCode (swappable)
 - **8 specialized swarms** — engineering, operations, business, data, product, growth, review, orchestration
 - **11 quality gates** — security, imports, API contracts, mutation safety, backward compat, blind consensus + more
 - **6 rule sets** — security, testing, commits, TypeScript, Python, Go (always-follow)
+- **Palantir-grade intelligence** — THINK + RELATE + SUGGEST + EXECUTE + PRESENT pipeline on every build
 
 ---
 
@@ -225,6 +227,103 @@ Load any skill by typing `/orchestrator:<name>` in Claude Code:
 | `/spec` | Drop any spec → deployed product (PRD/OpenAPI/issue/brief) |
 | `/swarm` | Launch a specialized agent swarm with consensus |
 | `/ci-fix` | Monitor CI pipeline + autonomously fix failures |
+| `/think` | Full THINK→RELATE→SUGGEST→EXECUTE→PRESENT intelligence pipeline |
+
+---
+
+## Palantir-Grade Intelligence
+
+The most powerful capability: **THINK → RELATE → SUGGEST → EXECUTE → PRESENT** — a full intelligence pipeline inspired by Palantir Gotham, DARPA KAIROS, and NSA-grade analytical systems. Runs automatically on every complex build and standalone via `/think`.
+
+### 5 Intelligence Primitives
+
+```
+THINK       → Adaptive Graph of Thoughts (AGoT, arXiv:2502.05078)
+              Recursive reasoning DAG — only expands nodes where uncertainty is high
+              +46.2% GPQA vs. standard CoT. Synthesizes leaf conclusions into final answer.
+
+RELATE      → i2 Analyst's Notebook + Palantir Entity-Link-Property methodology
+              Extracts typed entities (person/org/event/threat/artifact/location)
+              "Search around" BFS: finds indirect connections A→B→C across the graph
+              All entities stored in persistent Palantir-style Dynamic Ontology
+
+SUGGEST     → DARPA KAIROS schema-matching + abductive inference
+              Classifies event type (supply-chain-attack, ransomware, insider-threat...)
+              Generates ranked hypotheses with evidence chains, predicted indicators,
+              counter-evidence, and actions to verify each hypothesis
+
+EXECUTE     → A2P causal planning (arXiv:2509.10401): Abduct → Act → Predict
+              Abduct: infer hidden root causes behind the situation
+              Act: design minimal interventions targeting root causes (not symptoms)
+              Predict: simulate counterfactual trajectory + failure modes for each action
+
+PRESENT     → IC Analytic Standards (NSA/CIA format)
+              BLUF (Bottom Line Up Front) — one-sentence verdict
+              Key Judgments with HIGH/MEDIUM/LOW confidence levels
+              Evidence chains with source attribution
+              Full markdown intelligence report
+```
+
+### Knowledge Graph Architecture
+
+| Module | Research Basis | Capability |
+|--------|---------------|------------|
+| `thinkEngine.js` | AGoT (+46.2% GPQA) · DARPA KAIROS · IC Standards | Full 5-primitive pipeline |
+| `ontologyEngine.js` | Palantir Gotham · i2 ELP methodology | Dynamic entity-link-property graph |
+| `knowledgeGraph.js` | HippoRAG 2 (ICML '25) · GraphRAG · EvoReasoner | PPR retrieval + community detection |
+| `causalEngine.js` | A2P (arXiv:2509.10401) · CRAwDAD · Pearl do-calculus | Causal inference + counterfactuals |
+| `temporalReasoner.js` | EvoReasoner (+23.3%) · CHRONOS · TempoRAG | Time-aware facts + drift detection |
+
+### Dynamic Ontology (Palantir Architecture)
+
+Three layers — exactly how Palantir Gotham structures intelligence data:
+
+```
+SEMANTIC  — Entity type definitions (person, org, event, artifact, location, threat, concept, action)
+KINETIC   — Live entity state (current facts, confidence scores, source attribution)
+DYNAMIC   — Temporal history (how entities evolve, contradiction resolution, validity windows)
+```
+
+New entity types are discovered and auto-added to the schema ("dynamic ontology").
+
+### Causal Reasoning (CRAwDAD + A2P)
+
+```
+Dual-agent debate: Reasoner proposes causal claim → Critic challenges →
+they debate 3 rounds → neutral arbiter renders verdict
+Accuracy: 67.94% → 80.04% on causal benchmarks (CRAwDAD, arXiv:2504.17445)
+
+A2P planning: Abduct hidden factors → Act with minimal interventions →
+Predict counterfactual trajectories with failure modes
+```
+
+### Temporal Intelligence (EvoReasoner)
+
+```
+temporalSnapshot("2024-01-15")   → reconstruct world state at any point in time
+detectDrift(since, until)         → which facts changed significantly in a window
+forecastTrend(subject, horizon)   → project current trends with 3-scenario model
+anomalyDetect()                   → flag temporal anomalies (CHRONOS-inspired)
+temporalQuery(subject, decayDays) → confidence decays exponentially with age
+```
+
+### Usage
+
+```bash
+# Standalone intelligence query
+/think Is our authentication system vulnerable to credential stuffing?
+
+# Via CLI
+orchestrator think "Analyze the threat actor behind these indicators: ..."
+
+# Via API
+curl -X POST http://localhost:3000/intelligence/think \
+  -d '{"question": "What is causing the authentication spike?"}'
+
+# Automatic on every complex build (intelligence !== false)
+curl -X POST http://localhost:3000/build \
+  -d '{"prompt": "...", "intelligence": true}'
+```
 
 ---
 
@@ -577,10 +676,15 @@ lib/
   selfHeal.js          ← Subsystem health monitoring
   apiServer.js         ← REST API + SSE + WebSocket server
   aiProxy.js           ← OpenAI-compatible proxy (port 3002)
-  prmVerifier.js       ← Process Reward Model — step-wise pipeline verification (NEW)
-  councilMode.js       ← 3-phase council consensus: Triage→Debate→Synthesis (NEW)
+  prmVerifier.js       ← Process Reward Model — step-wise pipeline verification
+  councilMode.js       ← 3-phase council consensus: Triage→Debate→Synthesis
   ragEngine.js         ← GSW RAG: TF-IDF + Semantic Workspace (20% better than vector RAG)
-  antiSycophancy.js    ← Multi-provider blind review + adversarial red-team debate (UPGRADED)
+  antiSycophancy.js    ← Multi-provider blind review + adversarial red-team debate
+  thinkEngine.js       ← THINK→RELATE→SUGGEST→EXECUTE→PRESENT intelligence pipeline (NEW)
+  ontologyEngine.js    ← Palantir Gotham dynamic ontology: ELP + searchAround BFS (NEW)
+  knowledgeGraph.js    ← HippoRAG 2 KG: Personalized PageRank + community detection (NEW)
+  causalEngine.js      ← A2P + CRAwDAD causal inference: counterfactuals + do-calculus (NEW)
+  temporalReasoner.js  ← EvoReasoner temporal intelligence: snapshots + drift + forecasts (NEW)
 agents/                ← 11 JS pipeline agents + 9 MD review agents
 skills/                ← 18 SKILL.md workflow definitions
 commands/              ← 13 slash command definitions

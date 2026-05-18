@@ -38,6 +38,11 @@ import { autofixCILoop } from './lib/ciLoop.js';
 import { antiSycophancyScore, consensusGate, fullReview } from './lib/antiSycophancy.js';
 import { verifyPipeline, verifyOutput } from './lib/prmVerifier.js';
 import { runCouncil } from './lib/councilMode.js';
+import { runIntelligencePipeline, think, relate, suggest } from './lib/thinkEngine.js';
+import { knowledgeGraph } from './lib/knowledgeGraph.js';
+import { ontologyEngine } from './lib/ontologyEngine.js';
+import { causalEngine } from './lib/causalEngine.js';
+import { temporalReasoner } from './lib/temporalReasoner.js';
 
 export const orchestratorEvents = new EventEmitter();
 
@@ -91,6 +96,62 @@ async function runBuildPipeline(job) {
         log(jobId, 'memory', `RAG: ${ragCtx.sources.length} relevant memories (confidence: ${ragCtx.confidence.toFixed(2)})`, 'info');
       }
     } catch { /* non-critical */ }
+
+    // ── Intelligence Pipeline: THINK→RELATE→SUGGEST→EXECUTE→PRESENT ──
+    if (options.intelligence !== false) {
+      try {
+        log(jobId, 'intel', 'Running intelligence pipeline (THINK→RELATE→SUGGEST→EXECUTE→PRESENT)...');
+
+        // KG context from prior knowledge
+        const kgCtx = await knowledgeGraph.queryKG(prompt, 6);
+        if (kgCtx.context) {
+          sharedContext.kgContext = kgCtx.context;
+          log(jobId, 'intel', `KG: ${kgCtx.triples.length} relevant facts retrieved (PPR)`, 'info');
+        }
+
+        // Extract causal relationships from the prompt
+        await causalEngine.extractCausalGraph(prompt, jobId);
+
+        // Full intelligence pipeline (think + relate + suggest)
+        const intel = await runIntelligencePipeline(
+          prompt,
+          [sharedContext.ragContext, sharedContext.kgContext].filter(Boolean).join('\n\n'),
+          { skipExecute: true, skipPresent: true } // skip execute/present here — done post-build
+        );
+
+        sharedContext.intelligence = intel;
+
+        // Store entities in ontology for future searchAround queries
+        if (intel.relate?.entities?.length > 0) {
+          for (const entity of intel.relate.entities) {
+            ontologyEngine.addEntity({
+              name: entity.name || entity,
+              type: entity.type || 'concept',
+              properties: entity.properties || {},
+              confidence: entity.confidence || 0.7,
+              source: jobId,
+            });
+          }
+        }
+
+        // Log top hypothesis
+        const topHyp = intel.suggest?.hypotheses?.[0];
+        if (topHyp) {
+          log(jobId, 'intel', `Top hypothesis: ${topHyp.hypothesis?.slice(0, 80)} (conf: ${((topHyp.confidence || 0) * 100).toFixed(0)}%)`, 'info');
+        }
+
+        // Record temporal event for this build
+        temporalReasoner.addEvent('build', `Build initiated: ${prompt.slice(0, 80)}`, {
+          entities: intel.relate?.entities?.map(e => e.name || e) ?? [],
+          severity: 'low',
+          source: jobId,
+        });
+
+        log(jobId, 'intel', `Intelligence ready — reasoning depth: ${intel.think?.nodes ?? 0} nodes`, 'success');
+      } catch (e) {
+        log(jobId, 'intel', `Intelligence pipeline: ${e.message?.slice(0, 60)}`, 'warn');
+      }
+    }
 
     // ── Phase 0: Strategy ──────────────────────────────────────────────
     log(jobId, 'strategy', `Engine: ${engine.name || 'claude'} | Analyzing goal complexity...`);
@@ -455,5 +516,47 @@ if (process.env.SKIP_SERVER !== 'true') {
   });
 }
 
+/**
+ * Run the full THINK→RELATE→SUGGEST→EXECUTE→PRESENT intelligence pipeline
+ * as a standalone operation (not tied to a build job).
+ * Exposed for /think CLI command and API endpoint.
+ *
+ * @param {string} question - Question or situation to reason about
+ * @param {string} [context]
+ * @returns {Promise<Object>} Full intelligence report
+ */
+export async function runIntelligence(question, context = '') {
+  // Enrich context from KG
+  const kgCtx = await knowledgeGraph.queryKG(question, 8).catch(() => ({ context: '' }));
+  const enrichedContext = [context, kgCtx.context].filter(Boolean).join('\n\n');
+
+  const result = await runIntelligencePipeline(question, enrichedContext);
+
+  // Save extracted entities to ontology
+  for (const entity of result.relate?.entities ?? []) {
+    ontologyEngine.addEntity({
+      name: entity.name || entity,
+      type: entity.type || 'concept',
+      properties: entity.properties || {},
+      confidence: entity.confidence || 0.7,
+      source: 'think-cmd',
+    });
+  }
+
+  // Record as temporal event
+  temporalReasoner.addEvent('intelligence-query', question.slice(0, 100), {
+    entities: result.relate?.entities?.map(e => e.name || e) ?? [],
+    severity: 'low',
+    source: 'think-cmd',
+  });
+
+  return result;
+}
+
 export { webSearchAgentModule as webSearchAgent };
-export default { startBuild, startBuildFromSpec, cancelBuild, getBuildState, orchestratorEvents };
+export {
+  think, relate, suggest,
+  knowledgeGraph, ontologyEngine,
+  causalEngine, temporalReasoner,
+};
+export default { startBuild, startBuildFromSpec, cancelBuild, getBuildState, orchestratorEvents, runIntelligence };
