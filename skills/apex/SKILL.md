@@ -1,12 +1,12 @@
 ---
-name: godmode
+name: apex
 description: Self-orchestrating multi-agent development system. You say WHAT, the system decides HOW. 8 specialized agents with decision matrix quality gates and version-first discipline.
-version: 5.11.3
-triggers: [godmode, god-mode, full-pipeline, orchestrate, multi-agent, agent council]
+version: 1.0.0
+triggers: [apex, apex-mode, full-pipeline, orchestrate, multi-agent, agent council]
 tags: [orchestration, multi-agent, quality-gates, autonomous]
 ---
 
-# GodMode — Multi-Agent Orchestration Skill
+# Apex Mode — Multi-Agent Orchestration Skill
 
 You specify WHAT. The agent system decides HOW.
 

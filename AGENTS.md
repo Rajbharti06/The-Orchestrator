@@ -4,7 +4,7 @@ This file works across Claude Code, Cursor, Codex, OpenCode, and any AGENTS.md-c
 
 ## System Overview
 
-Orchestrator X uses 20 specialized pipeline agents + 9 GodMode review agents (29 total). Agents communicate through structured JSON context. The orchestrator coordinates parallel, sequential, and loop-based execution with a dependency graph.
+Orchestrator X uses 20 specialized pipeline agents + 9 Apex Council review agents (29 total). Agents communicate through structured JSON context. The orchestrator coordinates parallel, sequential, and loop-based execution with a dependency graph.
 
 ```
 [User Prompt]
@@ -41,9 +41,9 @@ Orchestrator X uses 20 specialized pipeline agents + 9 GodMode review agents (29
                              [Web Search] ── on unknown errors
 ```
 
-## GodMode Workflow (Full Power Mode)
+## Apex Workflow (Full Power Mode)
 
-Activate with `/orchestrator:godmode` or by saying "GodMode: [task]":
+Activate with `/orchestrator:apex` or by saying "Apex: [task]":
 
 ```
 New Feature:   Researcher → Architect → Builder → Validator+Tester (parallel) → Scribe

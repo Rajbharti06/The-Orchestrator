@@ -44,7 +44,7 @@ When CI fails:
 2. Extract file + line + error message
 3. Send to `autofixCILoop` with max 3 repair attempts
 4. Each attempt: fix → commit → wait for CI → check result
-5. If all 3 fail: escalate to human via `.loki/HUMAN_INPUT.md`
+5. If all 3 fail: escalate to human via `.vanguard/HUMAN_INPUT.md`
 
 ## Usage
 

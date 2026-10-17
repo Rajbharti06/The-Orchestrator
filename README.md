@@ -46,7 +46,7 @@ Result: running, tested, documented, deployed application
 
 ## Core Statistics
 
-- **45 specialized agents** — pipeline agents + GodMode council + swarm coordinators + CI + spec analyst
+- **45 specialized agents** — pipeline agents + Apex Council + swarm coordinators + CI + spec analyst
 - **24 SKILL.md workflow definitions** — RARV, federation, swarms, anti-sycophancy, RAG, spec-to-product + 18 more
 - **17 slash commands** — `/build`, `/spec`, `/swarm`, `/think`, `/ci-fix`, `/tdd`, `/e2e`, and more
 - **36 lib modules** — RAG engine, swarm coordinator, agent federation, RARV loop, CI-fix, 3-layer memory, **5 new intelligence engines** + more
@@ -102,14 +102,14 @@ curl -X POST http://localhost:3000/build \
   -d '{"prompt": "REST API with PostgreSQL and JWT auth"}'
 ```
 
-### 2. GodMode — full 8-agent council
+### 2. Apex Mode — full 8-agent council
 
 Prefix your prompt with the workflow type:
 
 ```
-GodMode feature: Add OAuth2 login with GitHub and Google
-GodMode api-change: Rename /users to /api/v2/accounts
-GodMode bugfix: Fix the race condition in the job queue
+Apex feature: Add OAuth2 login with GitHub and Google
+Apex api-change: Rename /users to /api/v2/accounts
+Apex bugfix: Fix the race condition in the job queue
 ```
 
 ### 3. Test quality without API keys
@@ -139,7 +139,7 @@ node cli.js status   # system intelligence report
 | GitHub Agent | Git commit + push with meaningful messages | haiku |
 | Hosting Router | Deploy to Railway/Vercel/Render/Fly.io | haiku |
 
-### GodMode Review Council (9 MD agents)
+### Apex Council (9 MD agents)
 
 | Agent | Role | Model |
 |-------|------|-------|
@@ -153,7 +153,7 @@ node cli.js status   # system intelligence report
 | @github-manager | Issues + PRs + releases | haiku |
 | @code-reviewer | Full review: correctness, performance, security | sonnet |
 
-#### GodMode Workflows
+#### Apex Workflows
 
 ```
 New Feature:   researcher → architect → builder → validator + tester → scribe
@@ -178,32 +178,32 @@ Release:       scribe → github-manager
 
 Load any skill by typing `/orchestrator:<name>` in Claude Code:
 
-| Skill | Source | Purpose |
-|-------|--------|---------|
-| `godmode` | GodMode v5 | 8-agent orchestration with dual quality gates |
-| `build-pipeline` | ECC | Full 8-phase autonomous build workflow |
-| `tdd-workflow` | ECC | Red-green-refactor with 80% coverage enforcement |
-| `security-review` | ECC | OWASP Top 10 full audit |
-| `api-design` | ECC | RESTful contract-first design patterns |
-| `backend-patterns` | ECC | Express / FastAPI / Django / Gin production patterns |
-| `frontend-patterns` | ECC | React / Vue / Next.js / Svelte component patterns |
-| `database-migrations` | ECC | Zero-downtime migration patterns |
-| `deployment-patterns` | ECC | Railway / Vercel / Render / Fly.io + Docker |
-| `goal-loops` | ECC | Verifier loops + completion loops for autonomous agents |
-| `multi-engine` | ECC | Swap Claude/Codex/Gemini/OpenCode per task |
-| `dream-memory` | ECC | Background memory consolidation (2hr cycles) |
-| `verification-loop` | ECC | QA loop with web-search fallback |
-| `strategic-compact` | ECC | Goal decomposition + dependency graph |
-| `eval-harness` | ECC | 8-case self-scoring eval suite |
-| `autonomous-loops` | ECC | Self-improvement configuration |
-| `continuous-learning-v2` | ECC | Instinct-based learning system |
-| `search-first` | ECC | Research-before-code pattern |
-| `rarv-cycles` | Loki Mode | RARV autonomous execution (Reason→Act→Reflect→Verify) |
-| `agent-federation` | Ruflo/Claude Flow v3 | Named agents with Pipeline / Fan-out / Supervisor topologies |
-| `swarm-intelligence` | Loki Mode | 8-swarm architecture with Raft consensus |
-| `anti-sycophancy` | Loki Mode | Blind 3-reviewer system, 2/3 consensus, mutation detection |
-| `rag-memory` | Ruflo | 4-step RAG pipeline over 6 memory namespaces |
-| `spec-to-product` | Loki Mode | Any spec format (PRD/OpenAPI/issue/brief) → deployed product |
+| Skill | Lineage | Purpose |
+|-------|---------|---------|
+| `apex` | Apex | 8-agent orchestration with dual quality gates |
+| `build-pipeline` | Core | Full 8-phase autonomous build workflow |
+| `tdd-workflow` | Core | Red-green-refactor with 80% coverage enforcement |
+| `security-review` | Core | OWASP Top 10 full audit |
+| `api-design` | Core | RESTful contract-first design patterns |
+| `backend-patterns` | Core | Express / FastAPI / Django / Gin production patterns |
+| `frontend-patterns` | Core | React / Vue / Next.js / Svelte component patterns |
+| `database-migrations` | Core | Zero-downtime migration patterns |
+| `deployment-patterns` | Core | Railway / Vercel / Render / Fly.io + Docker |
+| `goal-loops` | Core | Verifier loops + completion loops for autonomous agents |
+| `multi-engine` | Core | Swap Claude/Codex/Gemini/OpenCode per task |
+| `dream-memory` | Core | Background memory consolidation (2hr cycles) |
+| `verification-loop` | Core | QA loop with web-search fallback |
+| `strategic-compact` | Core | Goal decomposition + dependency graph |
+| `eval-harness` | Core | 8-case self-scoring eval suite |
+| `autonomous-loops` | Core | Self-improvement configuration |
+| `continuous-learning-v2` | Core | Instinct-based learning system |
+| `search-first` | Core | Research-before-code pattern |
+| `rarv-cycles` | Vanguard | RARV autonomous execution (Reason→Act→Reflect→Verify) |
+| `agent-federation` | Relay | Named agents with Pipeline / Fan-out / Supervisor topologies |
+| `swarm-intelligence` | Vanguard | 8-swarm architecture with Raft consensus |
+| `anti-sycophancy` | Vanguard | Blind 3-reviewer system, 2/3 consensus, mutation detection |
+| `rag-memory` | Relay | 4-step RAG pipeline over 6 memory namespaces |
+| `spec-to-product` | Vanguard | Any spec format (PRD/OpenAPI/issue/brief) → deployed product |
 
 ---
 
@@ -488,7 +488,7 @@ REFLECT → Score result: did it satisfy the goal?
 VERIFY  → If not, loop. If yes, commit and move to next phase.
 ```
 
-Human intervention signals: write `.loki/PAUSE` (pause), `.loki/STOP` (stop), `.loki/HUMAN_INPUT.md` (inject guidance).
+Human intervention signals: write `.vanguard/PAUSE` (pause), `.vanguard/STOP` (stop), `.vanguard/HUMAN_INPUT.md` (inject guidance).
 
 ---
 
@@ -703,7 +703,7 @@ Access at `http://localhost:3000` after `npm start`.
 
 **5 main panels:**
 - **Build Pipeline** — prompt input, engine selector, progress bar, live stats
-- **Intelligence** — tabs: Eval scores, Lessons, Autonomous loop, GodMode, Dreams
+- **Intelligence** — tabs: Eval scores, Lessons, Autonomous loop, Apex Mode, Dreams
 - **Build Log** — real-time streaming output per phase
 - **Sidebar** — build history, top instincts, provider scores, engines, task board, reports
 

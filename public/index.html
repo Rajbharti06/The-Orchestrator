@@ -144,7 +144,7 @@
         <div class="tab active" onclick="showTab('eval-tab')">Eval</div>
         <div class="tab" onclick="showTab('lessons-tab')">Lessons</div>
         <div class="tab" onclick="showTab('auto-tab')">Autonomous</div>
-        <div class="tab" onclick="showTab('godmode-tab')">GodMode</div>
+        <div class="tab" onclick="showTab('apex-tab')">Apex</div>
         <div class="tab" onclick="showTab('dreams-tab')">Dreams</div>
         <div class="tab" onclick="showTab('swarm-tab')">Swarms</div>
         <div class="tab" onclick="showTab('spec-tab')">Spec</div>
@@ -184,15 +184,15 @@
         <div id="auto-cycles" style="margin-top:12px;"></div>
       </div>
 
-      <!-- GodMode Tab -->
-      <div class="tab-content" id="godmode-tab">
+      <!-- Apex Tab -->
+      <div class="tab-content" id="apex-tab">
         <div class="intel-block">
-          <h4>GodMode — 8-Agent Orchestration</h4>
+          <h4>Apex Mode — 8-Agent Orchestration</h4>
           <div style="color:var(--muted);font-size:11px;line-height:1.7;margin-bottom:12px;">
             Select a workflow, enter your task, and all 8 specialized agents will execute in the optimal order with dual quality gates (validator + tester in parallel).
           </div>
           <div style="margin-bottom:8px;">
-            <select id="godmode-workflow" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-family:inherit;font-size:12px;width:100%;">
+            <select id="apex-workflow" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-family:inherit;font-size:12px;width:100%;">
               <option value="feature">New Feature (full workflow)</option>
               <option value="bugfix">Bug Fix (quick)</option>
               <option value="api-change">API Change (with guardian)</option>
@@ -200,15 +200,15 @@
               <option value="release">Release (docs + github)</option>
             </select>
           </div>
-          <textarea id="godmode-task" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:inherit;font-size:12px;resize:vertical;min-height:60px;" placeholder="Describe what to build..."></textarea>
+          <textarea id="apex-task" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:inherit;font-size:12px;resize:vertical;min-height:60px;" placeholder="Describe what to build..."></textarea>
           <div class="btn-row" style="margin-top:8px;">
-            <button class="btn-primary btn-sm" onclick="launchGodMode()">⚡ Launch GodMode</button>
-            <button class="btn-ghost btn-sm" onclick="loadGodModeAgents()">👥 View Agents</button>
+            <button class="btn-primary btn-sm" onclick="launchApexMode()">⚡ Launch Apex Mode</button>
+            <button class="btn-ghost btn-sm" onclick="loadApexAgents()">👥 View Agents</button>
           </div>
         </div>
         <div class="intel-block">
           <h4>Active Agents</h4>
-          <div id="godmode-agents" style="font-size:11px;color:var(--muted);">
+          <div id="apex-agents" style="font-size:11px;color:var(--muted);">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
               <div>🔍 @researcher</div><div style="color:var(--muted);">haiku</div>
               <div>🏗 @architect</div><div style="color:var(--muted);">opus</div>
@@ -550,17 +550,17 @@
     function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
     function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    // ── GodMode ──────────────────────────────────────────────────────────
-    async function launchGodMode() {
-      const workflow = document.getElementById('godmode-workflow').value;
-      const task = document.getElementById('godmode-task').value.trim();
-      if (!task) { alert('Enter a task for GodMode'); return; }
-      const prompt = `GodMode ${workflow}: ${task}`;
+    // ── Apex Mode ────────────────────────────────────────────────────────
+    async function launchApexMode() {
+      const workflow = document.getElementById('apex-workflow').value;
+      const task = document.getElementById('apex-task').value.trim();
+      if (!task) { alert('Enter a task for Apex Mode'); return; }
+      const prompt = `Apex ${workflow}: ${task}`;
       document.getElementById('prompt').value = prompt;
       await startBuild();
     }
-    function loadGodModeAgents() {
-      document.getElementById('godmode-agents').innerHTML = `
+    function loadApexAgents() {
+      document.getElementById('apex-agents').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr auto;gap:4px;align-items:center;">
           <div style="color:var(--blue)">🔍 @researcher</div><div style="color:var(--muted);font-size:10px">haiku · knowledge discovery</div>
           <div style="color:var(--blue)">🏗 @architect</div><div style="color:var(--muted);font-size:10px">opus · system design</div>

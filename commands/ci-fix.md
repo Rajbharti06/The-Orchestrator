@@ -50,7 +50,7 @@ CI fails
   → Repeat up to max-attempts
 
 If max-attempts reached:
-  → Write .loki/HUMAN_INPUT.md with full diagnosis
+  → Write .vanguard/HUMAN_INPUT.md with full diagnosis
   → Notify: "CI auto-fix exhausted — human required"
 ```
 

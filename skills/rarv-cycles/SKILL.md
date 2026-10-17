@@ -1,9 +1,9 @@
 ---
 name: rarv-cycles
-description: RARV autonomous execution — Reason→Act→Reflect→Verify. The gold standard for fully autonomous agent loops. From Loki Mode. Agents make decisions without asking questions.
+description: RARV autonomous execution — Reason→Act→Reflect→Verify. Orchestrator X's Vanguard Protocol for fully autonomous agent loops. Agents make decisions without asking questions.
 version: 1.0.0
-triggers: [rarv, reason-act-reflect-verify, autonomous-execution, no-questions, loki, self-directing]
-tags: [autonomous, loops, rarv, self-directing, loki-mode]
+triggers: [rarv, reason-act-reflect-verify, autonomous-execution, no-questions, vanguard, self-directing]
+tags: [autonomous, loops, rarv, self-directing, vanguard-protocol]
 ---
 
 # RARV Cycles — Autonomous Execution Skill
@@ -33,7 +33,7 @@ Fail?   → Inject failure into context. RARV again (max 10 cycles).
 
 ## Session Management
 
-Every RARV session writes `.loki/session.json`:
+Every RARV session writes `.vanguard/session.json`:
 ```json
 {
   "pid": 12345,
@@ -50,9 +50,9 @@ Sessions stale after 5 minutes without `updatedAt` update.
 
 Create files to control running sessions:
 ```bash
-touch .loki/PAUSE    # pause after current cycle completes
-touch .loki/STOP     # stop immediately (throws error)
-echo "Fix the auth" > .loki/HUMAN_INPUT.md  # inject directive
+touch .vanguard/PAUSE    # pause after current cycle completes
+touch .vanguard/STOP     # stop immediately (throws error)
+echo "Fix the auth" > .vanguard/HUMAN_INPUT.md  # inject directive
 ```
 
 ## 8 SDLC Phases

@@ -1,6 +1,6 @@
 ---
 name: agent-federation
-description: Named agent communication with 3 coordination topologies — Pipeline (A→B→C), Fan-out/Fan-in (parallel→synthesize), and Supervisor/Worker (dispatch→aggregate). From Ruflo/Claude Flow v3.
+description: Named agent communication with 3 coordination topologies — Pipeline (A→B→C), Fan-out/Fan-in (parallel→synthesize), and Supervisor/Worker (dispatch→aggregate). Orchestrator X's Relay Protocol.
 version: 1.0.0
 triggers: [federation, named-agents, send-message, pipeline-topology, fan-out, supervisor-worker]
 tags: [federation, coordination, topology, multi-agent, architecture]

@@ -66,7 +66,7 @@ agents/
   ci-agent.md          ← CI/CD monitoring + auto-fix agent (haiku)
   spec-analyst.md      ← Spec intake + normalization agent (sonnet)
   swarm-coordinator.md ← Meta-coordination + swarm assembly agent (sonnet)
-skills/                ← 24 SKILL.md definitions (ECC + OpenClaw + GodMode + Loki + Ruflo patterns)
+skills/                ← 24 SKILL.md definitions (Orchestrator X's core engineering, Apex, Vanguard, and Relay patterns)
 commands/              ← 16 slash command definitions
 rules/
   common/security.md   ← OWASP security rules (always follow)
@@ -82,7 +82,7 @@ memory/                ← Persisted lessons, instincts, history, dreams
 reports/               ← Version-organized build reports (reports/v2.1.4/)
 ```
 
-## Core Principles (from ECC + GodMode + OpenClaw + Loki + Ruflo)
+## Core Principles
 
 - **Agent-First** — Delegate specialized work to domain agents (researcher, architect, guardian, builder, validator, tester, scribe)
 - **Test-Driven** — 80%+ coverage; tests written before implementation
@@ -117,7 +117,7 @@ Load any skill in Claude Code by typing `/orchestrator:<skillname>`:
 
 | Skill | Purpose |
 |-------|---------|
-| `/orchestrator:godmode` | 8-agent GodMode orchestration (researcher→architect→builder→validator+tester→scribe) |
+| `/orchestrator:apex` | 8-agent Apex Mode orchestration (researcher→architect→builder→validator+tester→scribe) |
 | `/orchestrator:build-pipeline` | Full 8-phase autonomous build |
 | `/orchestrator:tdd-workflow` | Test-Driven Development workflow |
 | `/orchestrator:tdd-workflow-v2` | Enhanced TDD with 80% coverage enforcement |

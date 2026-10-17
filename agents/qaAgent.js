@@ -8,6 +8,7 @@
 import { callLLM } from '../lib/llmRouter.js';
 import { securityScanner } from '../lib/securityScanner.js';
 import { qualityGate } from '../lib/qualityGate.js';
+import { scanDependencies } from '../lib/dependencyScanner.js';
 
 const SYSTEM = `You are the QA Auditor Agent for Orchestrator X. Perform a thorough audit of generated code.
 
@@ -37,8 +38,13 @@ Return JSON:
  * @returns {Promise<Object>} QA report
  */
 export async function runQA(files, architecture, context = {}) {
-  // 1. Static security scan (instant, no LLM)
-  const secScan = securityScanner.scanFiles(files);
+  // 1. Static + AST-aware security scan (regex always runs; Semgrep layers
+  //    on top when installed — see securityScanner.scanFilesDeep).
+  const secScan = await securityScanner.scanFilesDeep(files);
+
+  // 1b. Supply-chain scan — the dependency tree this build just wrote for
+  //     itself gets checked against OSV.dev before anything installs it.
+  const depScan = await scanDependencies(files);
 
   // 2. Quality gate checks (instant)
   const gateResult = qualityGate.runQualityGate({
@@ -90,22 +96,26 @@ Check all required endpoints are implemented. Check for security issues.`,
     // Use static scan results only
   }
 
-  // 4. Merge results
+  // 4. Merge results — security findings (regex + Semgrep) and dependency
+  //    findings (OSV-Scanner) share the same Finding shape, so they fold
+  //    into the same severity buckets as the LLM audit.
+  const combinedFindings = [...secScan.findings, ...depScan.findings];
+
   const allIssues = {
     critical: [
-      ...secScan.findings.filter((f) => f.severity === 'critical').map((f) => `${f.title} in ${f.file}:${f.line}`),
+      ...combinedFindings.filter((f) => f.severity === 'critical').map((f) => `${f.title} in ${f.file}:${f.line}`),
       ...llmAudit.critical,
     ],
     high: [
-      ...secScan.findings.filter((f) => f.severity === 'high').map((f) => `${f.title} in ${f.file}:${f.line}`),
+      ...combinedFindings.filter((f) => f.severity === 'high').map((f) => `${f.title} in ${f.file}:${f.line}`),
       ...llmAudit.high,
     ],
     medium: [
-      ...secScan.findings.filter((f) => f.severity === 'medium').map((f) => f.title),
+      ...combinedFindings.filter((f) => f.severity === 'medium').map((f) => f.title),
       ...llmAudit.medium,
     ],
     low: [
-      ...secScan.findings.filter((f) => f.severity === 'low').map((f) => f.title),
+      ...combinedFindings.filter((f) => f.severity === 'low').map((f) => f.title),
       ...llmAudit.low,
     ],
     suggestions: llmAudit.suggestions,
@@ -128,6 +138,10 @@ Check all required endpoints are implemented. Check for security issues.`,
     ...allIssues,
     gateScore: gateResult.score,
     gateChecks: gateResult.checks,
+    tools: {
+      semgrep: secScan.tools?.semgrep ?? { ran: false, available: null, error: null },
+      osvScanner: { ran: depScan.skipped === null, available: depScan.available, skipped: depScan.skipped, error: depScan.error },
+    },
     timestamp: new Date().toISOString(),
   };
 }
